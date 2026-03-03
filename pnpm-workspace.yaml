@@ -6,6 +6,3 @@ supportedArchitectures:
     - current
   cpu:
     - current
-
-onlyBuiltDependencies:
-  - dplayer

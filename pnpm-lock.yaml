@@ -292,8 +292,8 @@ importers:
         specifier: ^11.0.0
         version: 11.0.0
       dplayer:
-        specifier: github:Hiram-Wong/DPlayer#20fee56a188cc6397c686d4437f149dbe25894c6
-        version: https://codeload.github.com/Hiram-Wong/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6(patch_hash=fedf116778d9bc62e79aff98a7f695c38b86d9b864696529dff54145b2d2ab35)
+        specifier: github:fcurrk/DPlayer#20fee56a188cc6397c686d4437f149dbe25894c6
+        version: https://codeload.github.com/fcurrk/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6(patch_hash=fedf116778d9bc62e79aff98a7f695c38b86d9b864696529dff54145b2d2ab35)
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@libsql/client@0.14.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
@@ -4649,8 +4649,8 @@ packages:
   downloadjs@1.4.7:
     resolution: {integrity: sha512-LN1gO7+u9xjU5oEScGFKvXhYf7Y/empUIIEAGBs1LzUq/rg5duiDrkuH5A2lQGd5jfMOb9X9usDa2oVXwJ0U/Q==}
 
-  dplayer@https://codeload.github.com/Hiram-Wong/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6:
-    resolution: {tarball: https://codeload.github.com/Hiram-Wong/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6}
+  dplayer@https://codeload.github.com/fcurrk/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6:
+    resolution: {tarball: https://codeload.github.com/fcurrk/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6}
     version: 1.32.7
 
   drizzle-orm@0.45.1:
@@ -14546,7 +14546,7 @@ snapshots:
 
   downloadjs@1.4.7: {}
 
-  dplayer@https://codeload.github.com/Hiram-Wong/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6(patch_hash=fedf116778d9bc62e79aff98a7f695c38b86d9b864696529dff54145b2d2ab35):
+  dplayer@https://codeload.github.com/fcurrk/DPlayer/tar.gz/20fee56a188cc6397c686d4437f149dbe25894c6(patch_hash=fedf116778d9bc62e79aff98a7f695c38b86d9b864696529dff54145b2d2ab35):
     dependencies:
       aribb24.js: 1.11.5
       axios: 1.13.5
