@@ -89,6 +89,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
+      - name: Debug workspace config
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents of pnpm-workspace.yaml:"
+          cat pnpm-workspace.yaml || echo "File not found"
+          echo "pnpm version: $(pnpm --version)"
+
+      - name: Approve builds for dplayer
+        run: pnpm approve-builds dplayer
+
       - name: Install Dependencies
         run: pnpm install
 
