@@ -98,6 +98,8 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install
+        env:
+          PNPM_GIT_DEP_PREPARE_NOT_ALLOWED: false
 
       - name: Prepare env file
         shell: bash
