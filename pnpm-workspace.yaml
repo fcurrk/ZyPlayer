@@ -1,3 +1,5 @@
+dangerouslyAllowAllBuilds: true
+
 packages:
   - 'packages/*'
 
@@ -6,6 +8,3 @@ supportedArchitectures:
     - current
   cpu:
     - current
-
-onlyBuiltDependencies:
-  - dplayer
