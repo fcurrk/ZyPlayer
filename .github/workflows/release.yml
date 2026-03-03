@@ -96,9 +96,6 @@ jobs:
           cat pnpm-workspace.yaml || echo "File not found"
           echo "pnpm version: $(pnpm --version)"
 
-      - name: Approve builds for dplayer
-        run: pnpm approve-builds dplayer
-
       - name: Install Dependencies
         run: pnpm install
 
