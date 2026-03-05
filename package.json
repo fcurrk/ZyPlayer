@@ -143,6 +143,7 @@
     "dayjs": "^1.11.19",
     "depcheck": "^1.4.7",
     "dotenv-cli": "^11.0.0",
+    "dplayer": "github:Hiram-Wong/DPlayer#20fee56a188cc6397c686d4437f149dbe25894c6",
     "drizzle-orm": "^0.45.1",
     "electron": "38.7.0",
     "electron-builder": "26.1.0",
@@ -282,6 +283,7 @@
     "onlyBuiltDependencies": [
       "@swc/core",
       "electron",
+      "dplayer",
       "electron-winstaller",
       "esbuild",
       "msw",
