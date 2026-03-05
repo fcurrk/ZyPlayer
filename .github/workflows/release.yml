@@ -98,7 +98,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pnpm store prune
+          pnpm self-update
           rm -rf node_modules pnpm-lock.yaml
           pnpm install
 

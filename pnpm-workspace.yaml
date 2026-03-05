@@ -6,6 +6,6 @@ supportedArchitectures:
     - current
   cpu:
     - current
-onlyBuiltDependencies:
-  - 'dplayer'
-  - 'mpegts.js'
+allowBuilds:
+  dplayer: true
+  mpegts.js: true
