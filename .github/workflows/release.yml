@@ -89,16 +89,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      - name: Debug workspace config
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Contents of pnpm-workspace.yaml:"
-          cat pnpm-workspace.yaml || echo "File not found"
-          echo "pnpm version: $(pnpm --version)"
-
       - name: Install Dependencies
         run: |
-          pnpm self-update
           rm -rf node_modules pnpm-lock.yaml
           pnpm install
 
