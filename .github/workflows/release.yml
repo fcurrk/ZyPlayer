@@ -90,10 +90,7 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install Dependencies
-        run: |
-          rm -rf node_modules pnpm-lock.yaml
-          pnpm install
-
+        run: pnpm install
 
       - name: Prepare env file
         shell: bash
