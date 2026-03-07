@@ -1,6 +1,6 @@
 <template>
   <div class="quick-menu">
-//    <sponsor v-if="!isFilter('sponsor')" class="system-function" />
+    <!-- <sponsor v-if="!isFilter('sponsor')" class="system-function" /> -->
     <ai v-if="!isFilter('ai')" class="system-function" />
     <language v-if="!isFilter('language')" class="system-function" />
     <theme v-if="!isFilter('skin')" class="system-function" />
