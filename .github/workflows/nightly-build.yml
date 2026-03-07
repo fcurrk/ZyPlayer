@@ -30,12 +30,12 @@ jobs:
   check-repository:
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ github.repository == 'Hiram-Wong/zyfun' }}
+      should_run: ${{ github.repository == 'fcurrk/ZyPlayer' }}
     steps:
       - name: Check if running in main repository
         run: |
           echo "Running in repository: ${{ github.repository }}"
-          echo "Should run: ${{ github.repository == 'Hiram-Wong/zyfun' }}"
+          echo "Should run: ${{ github.repository == 'fcurrk/ZyPlayer' }}"
 
   check-commit:
     runs-on: ubuntu-latest
