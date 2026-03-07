@@ -213,7 +213,7 @@
       <t-form-item :label="$t('pages.setting.base.other.title')" name="other">
         <t-space align="center">
           <span class="title" @click="handleFactoryReset">{{ $t('pages.setting.base.other.factoryReset') }}</span>
-          <span class="title" @click="handleDialog('update')">{{ $t('pages.setting.base.other.checkUpdate') }}</span>
+          //<span class="title" @click="handleDialog('update')">{{ $t('pages.setting.base.other.checkUpdate') }}</span>
           <span class="title" @click="handleDialog('disclaimer')">{{ $t('pages.setting.base.other.disclaimer') }}</span>
         </t-space>
 

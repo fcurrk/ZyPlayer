@@ -1,6 +1,6 @@
 <template>
   <div class="quick-menu">
-    <sponsor v-if="!isFilter('sponsor')" class="system-function" />
+//    <sponsor v-if="!isFilter('sponsor')" class="system-function" />
     <ai v-if="!isFilter('ai')" class="system-function" />
     <language v-if="!isFilter('language')" class="system-function" />
     <theme v-if="!isFilter('skin')" class="system-function" />
@@ -24,7 +24,7 @@ import Ai from './components/Ai.vue';
 import Lab from './components/Lab.vue';
 import Language from './components/Language.vue';
 import Setting from './components/Setting.vue';
-import Sponsor from './components/Sponsor.vue';
+//import Sponsor from './components/Sponsor.vue';
 import Theme from './components/Theme.vue';
 
 const isFilter = (name: string) => {

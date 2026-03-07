@@ -8,7 +8,7 @@ export enum USER_AGENT {
   MOBILE_ANDROID_PIXEL = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36',
   MOBILE_ANDROID_MI_UC = 'Mozilla/5.0 (Linux; U; Android 9; zh-CN; MI 9 Build/PKQ1.181121.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.108 UCBrowser/12.5.5.1035 Mobile Safari/537.36',
   MPV = 'libmpv',
-  OKHTTP = 'okhttp/4.9.1',
+  OKHTTP = 'okHttp/Mod-1.5.0.0',
   DART = 'Dart/2.14 (dart:io)',
   UA = 'Mozilla/5.0',
 }
