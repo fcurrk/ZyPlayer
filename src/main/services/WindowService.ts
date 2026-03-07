@@ -4,7 +4,7 @@ import { loggerService } from '@logger';
 import { appLocale } from '@main/services/AppLocale';
 import { configManager } from '@main/services/ConfigManager';
 import { APP_DATABASE_PATH, APP_FILE_PATH } from '@main/utils/path';
-import { isDev, isLinux, isMacOS, isPackaged, isWindows } from '@main/utils/systeminfo';
+import { isDev, isLinux, isMacOS, isMacOSTahoe, isPackaged, isWindows } from '@main/utils/systeminfo';
 import { titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
@@ -675,7 +675,7 @@ export class WindowService {
         ? {
             titleBarStyle: 'hidden',
             titleBarOverlay: nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight,
-            trafficLightPosition: { x: 8, y: 14 },
+            trafficLightPosition: isMacOSTahoe ? { x: 8, y: 14 } : { x: 12, y: 14 },
           }
         : {
             frame: false, // Frameless window for Windows and Linux
@@ -734,7 +734,7 @@ export class WindowService {
         ? {
             titleBarStyle: 'hidden',
             titleBarOverlay: nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight,
-            trafficLightPosition: { x: 8, y: 14 },
+            trafficLightPosition: isMacOSTahoe ? { x: 8, y: 14 } : { x: 12, y: 14 },
           }
         : {
             frame: false, // Frameless window for Windows and Linux
@@ -800,7 +800,7 @@ export class WindowService {
         ? {
             titleBarStyle: 'hidden',
             titleBarOverlay: nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight,
-            trafficLightPosition: { x: 8, y: 14 },
+            trafficLightPosition: isMacOSTahoe ? { x: 8, y: 14 } : { x: 12, y: 14 },
           }
         : {
             frame: false, // Frameless window for Windows and Linux

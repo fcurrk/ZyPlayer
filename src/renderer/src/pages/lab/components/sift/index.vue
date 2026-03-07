@@ -399,11 +399,11 @@ const actionGenerateCurrentSift = async () => {
       excludeKeys: exclude_keys,
     });
 
-    logger('testResult', `<Data>CurrentSift: ${toHMS()} > `, 'verbose', resp);
+    logger('testResult', `${toHMS()} [Sift]`, 'verbose', resp);
 
     MessagePlugin.success(t('common.success'));
   } catch (error) {
-    logger('testResult', `<Data>CurrentSift: ${toHMS()} > `, 'error', error);
+    logger('testResult', `${toHMS()} [Sift]`, 'error', error);
     MessagePlugin.error(`${t('common.error')}:${(error as Error).message}`);
   } finally {
     loading.value.sift = false;
@@ -449,11 +449,11 @@ const actionGenerateAllSift = async () => {
     const filterRes = filterResp.reduce((a, { id, filters }) => (filters ? ((a[id] = filters), a) : a), {});
 
     siftResult.value = filterRes;
-    logger('testResult', `<Data>FinalSift: ${toHMS()} > `, 'verbose', filterRes);
+    logger('testResult', `${toHMS()} [Final]`, 'verbose', filterRes);
 
     MessagePlugin.success(t('common.success'));
   } catch (error) {
-    logger('testResult', `<Data>FinalSift: ${toHMS()} > `, 'error', error);
+    logger('testResult', `${toHMS()} [Final]`, 'error', error);
     MessagePlugin.error(`${t('common.error')}:${(error as Error).message}`);
   } finally {
     loading.value.allSift = false;

@@ -40,7 +40,7 @@ import { computed, ref, useAttrs, watch } from 'vue';
 
 import RenderMd from '@/components/render-markdown/index.vue';
 
-const attrs: Partial<DialogProps & { title: string; content: string; visible: boolean }> = useAttrs();
+const attrs: Partial<DialogProps & { title: string; content: string }> = useAttrs();
 
 const dialogRef = ref<InstanceType<typeof Dialog>>();
 const formVisible = ref(props.visible);

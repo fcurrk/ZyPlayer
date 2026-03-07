@@ -240,7 +240,7 @@ import { fetchSettingList, sourceSetting } from '@/api/setting';
 import ThemeAutoIcon from '@/assets/theme/auto.svg';
 import ThemeDarkIcon from '@/assets/theme/dark.svg';
 import ThemeLightIcon from '@/assets/theme/light.svg';
-import DialogDocument from '@/components/dialog-docment/index.vue';
+import DialogDocument from '@/components/dialog-document/index.vue';
 import InputShortcut from '@/components/input-shortcut/index.vue';
 import { emitterChannel, emitterSource } from '@/config/emitterChannel';
 import { attachContent } from '@/config/global';
@@ -398,7 +398,7 @@ const setup = () => {
   onIpcListener();
 };
 
-const reloadConfig = async (eventData: { source: string; data: any }) => {
+const reloadConfig = async ({ data: eventData }) => {
   const { source } = eventData;
   if (source === emitterSource.SETTING_BASE) return;
 

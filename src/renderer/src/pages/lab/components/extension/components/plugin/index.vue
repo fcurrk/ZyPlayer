@@ -79,7 +79,7 @@ import { MessagePlugin } from 'tdesign-vue-next';
 import { computed, onActivated, onMounted, ref, toRaw } from 'vue';
 
 import { fetchPluginPage } from '@/api/plugin';
-import DialogDocument from '@/components/dialog-docment/index.vue';
+import DialogDocument from '@/components/dialog-document/index.vue';
 // import { installPlugin, startPlugin, stopPlugin, uninstallPlugin } from '@/api/plugin';
 import SettingTable from '@/components/setting-table/index.vue';
 import { emitterChannel, emitterSource } from '@/config/emitterChannel';
@@ -140,7 +140,7 @@ onActivated(() => {
   emitter.on(emitterChannel.REFRESH_PLUGIN_CONFIG, reloadConfig);
 });
 
-const reloadConfig = async (eventData: { source: string; data: any }) => {
+const reloadConfig = async ({ data: eventData }) => {
   const { source } = eventData;
   if (source === emitterSource.SETTING_TABLE) return;
 
