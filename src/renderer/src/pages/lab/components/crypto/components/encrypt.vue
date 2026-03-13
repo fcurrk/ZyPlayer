@@ -295,7 +295,7 @@ watch(
 const defaultConf = () => {
   output.value = '';
 
-  if (!PAD_OPTIONS.value.find((item) => item.value === formData.value.pad)) {
+  if (!PAD_OPTIONS.value.some((item) => item.value === formData.value.pad)) {
     formData.value.pad = PAD_OPTIONS.value[0].value;
   }
 };

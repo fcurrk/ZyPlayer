@@ -158,16 +158,47 @@
       :extra="detailFormData.extra"
       :info="detailFormData.info"
     />
+    <action-view
+      ref="actionRef"
+      v-model:visible="active.actionDialog"
+      :config="actionData"
+      @submit="onActionSubmit"
+      @cancel="onActionCancel"
+      @timeout="onActionTimeout"
+    />
   </div>
 </template>
 <script setup lang="tsx">
 import 'v3-infinite-loading/lib/style.css';
 
+import type { ICmsActionSpecialIdType } from '@shared/config/cmsAction';
+import { CMS_ACTION_SPECIAL_ID_TYPE, CMS_ACTION_SPECIAL_ID_TYPES } from '@shared/config/cmsAction';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
-import { isArray, isArrayEmpty, isObject, isObjectEmpty } from '@shared/modules/validate';
-import type { ICmsHome, ICmsInfo } from '@shared/types/cms';
+import { toString } from '@shared/modules/toString';
+import {
+  isArray,
+  isArrayEmpty,
+  isFunction,
+  isJsonStr,
+  isNil,
+  isObject,
+  isObjectEmpty,
+  isPositiveFiniteNumber,
+  isStrEmpty,
+  isString,
+} from '@shared/modules/validate';
+import type {
+  ICmsActionBase,
+  ICmsActionEnvelope,
+  ICmsActionSpecialCopy,
+  ICmsActionSpecialDetail,
+  ICmsActionSpecialKeep,
+  ICmsHome,
+  ICmsInfo,
+} from '@shared/types/cms';
 import type { IModels } from '@shared/types/db';
 import { differenceBy } from 'es-toolkit';
+import JSON5 from 'json5';
 import { EllipsisIcon, HomeIcon, RootListIcon } from 'tdesign-icons-vue-next';
 import type { PopupVisibleChangeContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
@@ -175,7 +206,16 @@ import InfiniteLoading from 'v3-infinite-loading';
 import type { StateHandler as ILoadStateHdandler } from 'v3-infinite-loading/lib/types';
 import { computed, onActivated, onMounted, ref } from 'vue';
 
-import { fetchCmsCategory, fetchCmsDetail, fetchCmsHome, fetchCmsSearch, fetchSiteActive } from '@/api/film';
+import {
+  fetchCmsAction,
+  fetchCmsCategory,
+  fetchCmsDetail,
+  fetchCmsHome,
+  fetchCmsSearch,
+  fetchSiteActive,
+  fetchSiteDetailByKey,
+} from '@/api/film';
+import ActionView from '@/components/action/index.vue';
 import CommonNav from '@/components/common-nav/index.vue';
 import LazyBg from '@/components/lazy-bg/index.vue';
 import TitleMenu from '@/components/title-menu/index.vue';
@@ -193,6 +233,8 @@ const renderDefaultLazy = () => <LazyBg class="render-icon" />;
 
 const infiniteId = ref(Date.now());
 const searchValue = ref('');
+
+const actionRef = ref<InstanceType<typeof ActionView>>();
 
 const detailFormData = ref({
   info: {} as ICmsInfo,
@@ -219,6 +261,7 @@ const classList = ref<ICmsHome['class']>([]);
 const filterData = ref<ICmsHome['filters']>({});
 const filmList = ref<Array<ICmsInfo & { relateSite: IModels['site'] }>>([]);
 const folderBreadcrumb = ref<Array<{ label: ICmsInfo['vod_name']; value: ICmsInfo['vod_id'] }>>([]);
+const actionData = ref<ICmsActionBase>({} as unknown as ICmsActionBase);
 
 const active = ref({
   nav: '',
@@ -231,6 +274,7 @@ const active = ref({
   lazyload: false,
   loading: false,
   detailDialog: false,
+  actionDialog: false,
 });
 
 const navList = computed(() => config.value.list.map((t) => ({ id: t.id, name: t.name })));
@@ -543,14 +587,14 @@ const playWithInternalPlayer = (item: ICmsInfo, active: IModels['site']) => {
 
 const handleCmsTag = (type: 'folder' | 'action', doc: ICmsInfo) => {
   const helper = {
-    folder: handleCmsTagFolder,
-    action: handleCmsTagAction,
+    folder: handleCmsFolder,
+    action: handleCmsAction,
   };
 
   helper?.[type]?.(doc);
 };
 
-const handleCmsTagFolder = (doc: ICmsInfo) => {
+const handleCmsFolder = (doc: ICmsInfo) => {
   resetPagination();
 
   const prefixPath = folderBreadcrumb.value.map((item) => item.value).join('');
@@ -570,7 +614,192 @@ const handleCmsTagFolder = (doc: ICmsInfo) => {
   infiniteId.value = Date.now();
 };
 
-const handleCmsTagAction = (_doc: ICmsInfo) => {};
+const onActionSubmit = async (id: string, doc: Record<string, any>) => {
+  try {
+    const source = config.value.default;
+
+    const actionResp: ICmsActionEnvelope = await fetchCmsAction({
+      uuid: source.id,
+      action: id,
+      value: doc,
+    });
+
+    if (isNil(actionResp)) {
+      MessagePlugin.warning(t('pages.film.message.noSupportAction'));
+      return;
+    }
+
+    if (!isObject(actionResp)) {
+      MessagePlugin.info(toString(actionResp));
+      return;
+    }
+
+    if (Object.hasOwn(actionResp, 'toast')) MessagePlugin.info(actionResp.toast!);
+
+    if (Object.hasOwn(actionResp, 'action')) {
+      const { action } = actionResp;
+
+      if (CMS_ACTION_SPECIAL_ID_TYPES.includes(action.actionId as ICmsActionSpecialIdType)) {
+        const fn = handlerCmsActionSpecial[action.actionId];
+        if (isFunction(fn)) {
+          await fn(action);
+          return;
+        }
+
+        MessagePlugin.warning(t('pages.film.message.noSupportAction'));
+        return;
+      }
+
+      actionData.value = action as ICmsActionBase;
+      active.value.actionDialog = true;
+    }
+  } catch (error) {
+    console.error('Failed to exec action submit', error);
+    MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
+  }
+};
+
+const onActionCancel = async () => {
+  const { cancelAction, cancelValue } = actionData.value;
+  const source = config.value.default;
+
+  if (isNil(cancelAction)) return;
+
+  try {
+    await fetchCmsAction({
+      uuid: source.id,
+      action: cancelAction,
+      ...(cancelValue ? { value: cancelValue } : {}),
+    });
+  } catch (error) {
+    console.error('Failed to exec action cancel', error);
+    MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
+  }
+};
+
+const onActionTimeout = () => {};
+
+const handleCmsActionSpecialCopy = async (action: ICmsActionSpecialCopy) => {
+  try {
+    const { content } = action;
+    if (content) await navigator.clipboard.writeText(content);
+  } catch {
+    MessagePlugin.error(t('common.copyFail'));
+  }
+};
+
+const handleCmsActionSpecialDetail = async (action: ICmsActionSpecialDetail) => {
+  try {
+    const { skey, ids } = action;
+    let site = config.value.default;
+    if (isString(skey) && !isStrEmpty(skey)) site = await fetchSiteDetailByKey(skey);
+    if (!isObject(site) || isObjectEmpty(site)) {
+      MessagePlugin.warning(t('pages.film.message.noSiteInfo'));
+      return;
+    }
+    playEvent({ relateSite: site, vod_id: ids });
+  } catch (error) {
+    console.error('Failed to exec action detail', error);
+    MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
+  }
+};
+
+const handleCmsActionSpecialKeep = async (action: ICmsActionSpecialKeep) => {
+  const { reset, msg } = action;
+
+  if (reset) actionRef.value?.reset();
+
+  actionData.value = {
+    ...actionData.value,
+    ...(msg ? { msg } : {}),
+  } as ICmsActionBase;
+  active.value.actionDialog = true;
+};
+
+const handlerCmsActionSpecial = {
+  [CMS_ACTION_SPECIAL_ID_TYPE.COPY]: handleCmsActionSpecialCopy,
+  [CMS_ACTION_SPECIAL_ID_TYPE.DETAIL]: handleCmsActionSpecialDetail,
+  [CMS_ACTION_SPECIAL_ID_TYPE.KEEP]: handleCmsActionSpecialKeep,
+};
+
+const handleCmsAction = async (doc: ICmsInfo) => {
+  try {
+    const source = config.value.default;
+    let data = doc.vod_id;
+    if (isJsonStr(data)) data = JSON5.parse(data);
+
+    let actionResp: ICmsActionEnvelope | null = null;
+
+    if (isString(data) && !isStrEmpty(data)) {
+      actionResp = await fetchCmsAction({
+        uuid: source.id,
+        action: data,
+      });
+    } else if (isObject(data) && !isObjectEmpty(data)) {
+      actionResp = { action: data };
+    }
+
+    if (isNil(actionResp)) {
+      MessagePlugin.warning(t('pages.film.message.noSupportAction'));
+      return;
+    }
+
+    if (!isObject(actionResp)) {
+      MessagePlugin.info(toString(actionResp));
+      return;
+    }
+
+    if (Object.hasOwn(actionResp, 'action')) {
+      if (CMS_ACTION_SPECIAL_ID_TYPES.includes(actionResp.action.actionId as ICmsActionSpecialIdType)) {
+        const { action, toast } = actionResp;
+
+        if (toast) MessagePlugin.info(toast);
+
+        const fn = handlerCmsActionSpecial[action.actionId];
+        if (isFunction(fn)) {
+          await fn(action);
+          return;
+        }
+
+        MessagePlugin.warning(t('pages.film.message.noSupportAction'));
+        return;
+      }
+
+      actionData.value = actionResp.action as ICmsActionBase;
+      active.value.actionDialog = true;
+    }
+
+    if (Object.hasOwn(actionResp.action, 'initAction')) {
+      const { initAction, initValue, timeout: timeoutSec } = actionResp.action as ICmsActionBase;
+
+      void (async () => {
+        try {
+          const initResp: { action: Record<string, any> } = await fetchCmsAction({
+            uuid: source.id,
+            action: initAction,
+            ...(initValue ? { value: initValue } : {}),
+            ...(isPositiveFiniteNumber(timeoutSec) && timeoutSec! > 0 ? { timeout: timeoutSec! * 1000 } : {}),
+          });
+
+          if (isNil(initResp)) return;
+
+          if (!isObject(initResp)) {
+            MessagePlugin.info(toString(initResp));
+            return;
+          }
+
+          if (Object.hasOwn(actionResp, 'action')) {
+            actionData.value = initResp.action as ICmsActionBase;
+            active.value.actionDialog = true;
+          }
+        } catch {}
+      })();
+    }
+  } catch (error) {
+    console.error('Failed to exec action', error);
+    MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
+  }
+};
 
 const handleSearch = async () => {
   resetPagination();
@@ -635,6 +864,7 @@ const defaultConfig = () => {
   filterData.value = {};
   filmList.value = [];
   folderBreadcrumb.value = [];
+  actionData.value = {} as ICmsActionBase;
 
   config.value.default = {} as IModels['site'];
 };

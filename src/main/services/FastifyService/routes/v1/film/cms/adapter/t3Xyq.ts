@@ -384,7 +384,7 @@ class T3XyqAdapter {
             } else {
               n = pdfh(it, v);
             }
-            linename = linename.concat(n);
+            linename = `${linename}${n}`;
           });
           tabs.push(linename);
         });

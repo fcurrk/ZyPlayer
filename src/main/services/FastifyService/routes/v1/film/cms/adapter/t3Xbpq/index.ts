@@ -857,7 +857,7 @@ class T3XbpqAdapter {
         if (Object.hasOwn(extend, k) && extend[k] !== '') {
           /* empty */
         } else {
-          for (const vv of Array.from(value.v)) {
+          for (const vv of [...value.v]) {
             if (url.includes(vv)) {
               url = url.replace(vv, '');
               break;
@@ -1119,7 +1119,7 @@ class T3XbpqAdapter {
     let htmls: string[] = [];
     const plays: string[] = [];
     if (多线数组.length) {
-      const start_time = new Date().getTime();
+      const start_time = Date.now();
       logger.info('多线程开始');
       const heads = this.rule.headers;
       bfs = 多线数组.map((url) => ({
@@ -1137,7 +1137,7 @@ class T3XbpqAdapter {
           }
         }),
       )) as any[];
-      const end_time = new Date().getTime() - start_time;
+      const end_time = Date.now() - start_time;
       logger.info(`多线程结束,耗时: ${end_time}`);
     }
     // logger.info(htmls.length)
@@ -1195,7 +1195,7 @@ class T3XbpqAdapter {
     if (htmls.length === 0) {
       htmls = [html];
     } else {
-      htmls = [html].concat(htmls);
+      htmls = [html, ...htmls];
     }
     // logger.info(htmls.length)
 
@@ -1473,12 +1473,7 @@ class T3XbpqAdapter {
     const jumplay = this.getRuleValue(['跳转播放链接']);
 
     if (input && jumplay) {
-      const h = await this.req(
-        input,
-        Object.assign({}, this.rule.headers, {
-          Referer: getHome(input),
-        }),
-      );
+      const h = await this.req(input, { ...this.rule.headers, ...{ Referer: getHome(input) } });
       let temp = autoContent.splitStr(h, ['跳转播放链接'], {
         type: '链接',
       });
@@ -1529,7 +1524,7 @@ class T3XbpqAdapter {
 
   async req(url: string, headers = {}) {
     if (url.includes('时间戳')) {
-      url = url.replace(/时间戳/g, String(new Date().getTime()));
+      url = url.replace(/时间戳/g, String(Date.now()));
     }
     if (url.includes('md5(')) {
       const regex = /md5\((.*?)\)/g;

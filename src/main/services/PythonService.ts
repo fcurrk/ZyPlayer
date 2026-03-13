@@ -83,6 +83,7 @@ export class PythonService {
 
   runSpawn(
     args: string[] = [],
+    venv: boolean = false,
     cb: {
       stdoutCb?: (data: string) => void;
       stderrCb?: (data: string) => void;
@@ -93,7 +94,7 @@ export class PythonService {
     try {
       logger.debug(`Spawning Python process with args: ${args.join(' ')}`);
 
-      const cmd = ['run', ...args];
+      const cmd = ['run', ...(venv ? ['--active'] : []), ...args];
       const child = spawn(this.uvBinaryPath, cmd, {
         cwd: this.projectBasePath,
         detached: false,
@@ -124,9 +125,9 @@ export class PythonService {
     }
   }
 
-  async runExec(args: string[]): Promise<{ stdout: string; stderr: string }> {
+  async runExec(args: string[], venv: boolean = false): Promise<{ stdout: string; stderr: string }> {
     try {
-      const cmd = [this.uvBinaryPath, 'run', ...args];
+      const cmd = [this.uvBinaryPath, 'run', ...(venv ? ['--active'] : []), ...args];
       const { stdout, stderr } = await execAsync(cmd.join(' '), {
         cwd: this.projectBasePath,
         windowsHide: true,
@@ -139,9 +140,9 @@ export class PythonService {
     }
   }
 
-  runExecSync(args: string[]): { stdout: string; stderr: string } {
+  runExecSync(args: string[], venv: boolean = false): { stdout: string; stderr: string } {
     try {
-      const cmd = [this.uvBinaryPath, 'run', ...args];
+      const cmd = [this.uvBinaryPath, 'run', ...(venv ? ['--active'] : []), ...args];
       const output = execSync(cmd.join(' '), {
         cwd: this.projectBasePath,
         windowsHide: true,

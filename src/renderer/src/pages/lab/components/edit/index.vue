@@ -283,6 +283,7 @@ import type { ISiteType } from '@shared/config/film';
 import { SITE_TYPE } from '@shared/config/film';
 import { THEME } from '@shared/config/theme';
 import { toHMS } from '@shared/modules/date';
+import { jsonStrToObjByEval } from '@shared/modules/obj';
 import {
   isArray,
   isArrayEmpty,
@@ -1141,7 +1142,8 @@ const handleDataDebugProxy = async () => {
 const handleDataDebugProxyUpload = async () => {
   dataLoading.value.proxyUpload = true;
   try {
-    const { upload = [], url } = dataFormData.value.proxy;
+    const { upload: uploadRaw = '[]', url } = dataFormData.value.proxy;
+    let upload: Array<any> = [];
 
     if (!isString(url) || isStrEmpty(url)) {
       MessagePlugin.warning(t('common.message.noRequiredParam', ['url']));
@@ -1151,16 +1153,18 @@ const handleDataDebugProxyUpload = async () => {
       return;
     }
 
-    if (!isJsonStr(upload)) {
-      MessagePlugin.warning(t('common.message.noRequiredParam', ['upload']));
+    if (!isString(uploadRaw) || isStrEmpty(uploadRaw)) {
       return;
-    } else if (JSON5.parse(upload as string).length !== 3) {
-      MessagePlugin.warning(t('common.message.errRequiredParam', ['upload']));
-      return;
+    } else {
+      upload = jsonStrToObjByEval(uploadRaw) as Array<any>;
+      if (isArray(upload) && upload.length !== 3) {
+        MessagePlugin.warning(t('common.message.errRequiredParam', ['upload']));
+        return;
+      }
     }
 
     const params = Object.fromEntries(new URL(url).searchParams);
-    await setProxy({ text: JSON5.parse(upload as string), url: params.url });
+    await setProxy({ text: upload, url: params.url });
 
     MessagePlugin.success(t('common.success'));
   } catch (error) {

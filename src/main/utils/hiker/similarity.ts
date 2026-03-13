@@ -90,9 +90,7 @@ export const lcs = (str1: string, str2: string): ILCSResult => {
 
   const str1Length = str1.length;
   const str2Length = str2.length;
-  const dp = Array.from({ length: str1Length }, () => {
-    return Array.from({ length: str2Length }).fill(0);
-  }) as number[][];
+  const dp = Array.from({ length: str1Length }).fill(Array.from({ length: str2Length }).fill(0)) as number[][];
 
   let maxLen = 0;
   let endIndex = 0;

@@ -285,6 +285,7 @@ export interface ICmsActionSpecialCopy extends ICmsActionSpecialBase {
 export interface ICmsActionSpecialKeep extends ICmsActionSpecialBase {
   actionId: typeof CMS_ACTION_SPECIAL_ID_TYPE.KEEP;
   msg: string;
+  msgType: 'long_text';
   reset: boolean;
 }
 

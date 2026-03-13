@@ -16,7 +16,7 @@ const req = async (
   url: string,
   cobj: Record<string, any>,
 ): Promise<{ content: string; headers?: Record<string, string> }> => {
-  const obj = Object.assign({}, cobj);
+  const obj = { ...cobj };
 
   if (obj.data) {
     obj.body = obj.data;

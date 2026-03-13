@@ -54,8 +54,10 @@
                     </div>
                     <div class="card-footer">
                       <p class="card-footer-title txthide txthide1">
-                        <span>{{ item.videoName }}</span>
-                        <!-- <span v-if="item.type === 'film'">{{ formatIndex(item.videoIndex).index }}</span> -->
+                        <span class="title-name">{{ item.videoName }}</span>
+                        <span v-if="item.type === 1" class="title-index">
+                          {{ formatFilmIndex(item.videoIndex!) }}
+                        </span>
                       </p>
                       <p class="card-footer-desc txthide txthide1">
                         <laptop-icon size="14px" class="tiles-item_watch_pc icon" />
@@ -110,6 +112,8 @@ import {
   isObject,
   isObjectEmpty,
   isPositiveFiniteNumber,
+  isStrEmpty,
+  isString,
 } from '@shared/modules/validate';
 import type { ICmsInfo } from '@shared/types/cms';
 import type { IModels } from '@shared/types/db';
@@ -219,6 +223,12 @@ const getTimeKey = (timestamp: number): ITimeKey => {
   if (timeDiff === 0) return 'today';
   if (timeDiff < 7) return 'week';
   return 'ago';
+};
+const formatFilmIndex = (item: string): string => {
+  if (!isString(item) || isStrEmpty(item)) return '';
+
+  const [index, _url] = item.split('$');
+  return index;
 };
 
 const formatProgress = (watch: number, duration: number): string => {
@@ -648,6 +658,10 @@ const reloadConfig = async ({ data: eventData }) => {
                   line-height: var(--td-line-height-title-medium);
                   color: var(--td-text-color-primary);
                   transition: all 0.25s ease-in-out;
+
+                  .title-index {
+                    padding-left: var(--td-comp-paddingLR-xs);
+                  }
                 }
 
                 .card-footer-desc {

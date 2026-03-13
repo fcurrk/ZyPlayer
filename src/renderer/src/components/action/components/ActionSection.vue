@@ -155,6 +155,7 @@ defineExpose({
       margin-top: var(--td-comp-margin-m);
       margin-bottom: var(--td-comp-margin-s);
     }
+
     .content {
       color: var(--td-text-color-primary);
       font: var(--td-font-body-medium);

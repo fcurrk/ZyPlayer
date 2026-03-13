@@ -1,5 +1,11 @@
-import type { ICmsActionButtonType } from '@shared/config/cmsAction';
-import { CMS_ACTION_BUTTON_TYPE, CMS_ACTION_BUTTON_TYPES, CMS_ACTION_TYPE } from '@shared/config/cmsAction';
+import type {
+  ICmsActionButtonType,
+  ICmsActionButtonTypeDisplay,
+  ICmsActionButtonTypeEnum,
+  ICmsActionFormType,
+  ICmsActionType,
+} from '@shared/config/cmsAction';
+import { CMS_ACTION_FORM_TYPE, CMS_ACTION_TYPE } from '@shared/config/cmsAction';
 import {
   isArray,
   isArrayEmpty,
@@ -12,6 +18,25 @@ import {
   isString,
 } from '@shared/modules/validate';
 import JSON5 from 'json5';
+
+const isFormType = (type: ICmsActionType = CMS_ACTION_TYPE.INPUT): boolean => {
+  return CMS_ACTION_FORM_TYPE.includes(type as unknown as ICmsActionFormType);
+};
+
+const buttonToStandard = (type?: ICmsActionButtonType): Array<ICmsActionButtonTypeDisplay> => {
+  if (isNil(type)) return [];
+  if (isBoolean(type) && type === true) type = 2;
+
+  const map: Record<ICmsActionButtonTypeEnum, Array<ICmsActionButtonTypeDisplay>> = {
+    0: [], //
+    1: ['confirm'], // confirm
+    2: ['cancel', 'confirm'], // cancel/confirm
+    3: ['cancel', 'confirm', 'reset'], // cancel/confirm/reset
+    4: ['cancel', 'confirm', 'reset', 'preview'], // cancel/confirm/reset/preview
+  };
+
+  return Object.keys(map).includes(String(type)) ? map[type as ICmsActionButtonTypeEnum] : [];
+};
 
 const parseDelimitedFormat = (data: string, delimiter: string, pairSeparator: string) => {
   return data
@@ -26,13 +51,9 @@ const parseDelimitedFormat = (data: string, delimiter: string, pairSeparator: st
     .filter((item) => item.name);
 };
 
-export const parseActionButton = (type?: ICmsActionButtonType | boolean): ICmsActionButtonType => {
-  if (isNil(type)) return CMS_ACTION_BUTTON_TYPE.OK_CANCEL;
-  if (isBoolean(type) && type === true) return CMS_ACTION_BUTTON_TYPE.OK_CANCEL;
-
-  return CMS_ACTION_BUTTON_TYPES.includes(type as ICmsActionButtonType)
-    ? (type as ICmsActionButtonType)
-    : CMS_ACTION_BUTTON_TYPE.CUSTOM;
+export const parseActionButton = (actionType?: ICmsActionType, btnType?: ICmsActionButtonType) => {
+  if (isNil(btnType) && isFormType(actionType)) btnType = 2;
+  return buttonToStandard(btnType);
 };
 
 export const parseActionConfig = (data: string | Record<string, any> | Record<string, { config: any }>) => {

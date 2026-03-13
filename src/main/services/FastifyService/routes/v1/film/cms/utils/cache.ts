@@ -86,14 +86,14 @@ export const prepare = async (uuid: string, force: boolean = false): Promise<ICm
   const source = {
     ...dbResSource,
     categories: dbResSource.categories
-      ? Array.from(
-          new Set(
+      ? [
+          ...new Set(
             dbResSource.categories
               .split(/[,，]/)
               .map((c) => c.trim())
               .filter(Boolean),
           ),
-        )
+        ]
       : [],
   };
 

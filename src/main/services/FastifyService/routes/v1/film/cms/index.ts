@@ -67,14 +67,14 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
       const source = await dbService.site.get(uuid);
 
       const categories = source.categories
-        ? Array.from(
-            new Set(
+        ? [
+            ...new Set(
               source.categories
                 .split(/[,，]/)
                 .map((c) => c.trim())
                 .filter(Boolean),
             ),
-          )
+          ]
         : [];
 
       const rawClassList = Array.isArray(resp?.class) ? resp?.class : [];

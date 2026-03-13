@@ -53,13 +53,11 @@ export class WindowService {
   }
 
   public getAllNames(): string[] {
-    return Array.from(this.winPool.keys());
+    return [...this.winPool.keys()];
   }
 
   public getAllWindows(): BrowserWindow[] {
-    return Array.from(this.winPool.values())
-      .map((item) => item.window!)
-      .filter((win) => win instanceof BrowserWindow);
+    return Array.from(this.winPool.values(), (item) => item.window!).filter((win) => win instanceof BrowserWindow);
   }
 
   public getWindowName(mainWindow: BrowserWindow): string | null {
@@ -312,7 +310,7 @@ export class WindowService {
       finish();
     };
 
-    const timer = setTimeout(() => onAck(), 800);
+    const timer = setTimeout(onAck, 800);
 
     ipcMain.once(IPC_CHANNEL.WINDOW_DESTROY_RELAY, onAck);
     mainWindow.webContents.send(IPC_CHANNEL.WINDOW_DESTROY);

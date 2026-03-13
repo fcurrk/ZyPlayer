@@ -112,8 +112,7 @@ class ConnectService extends PythonService {
     this.checkBinary();
     await this.installDep();
 
-    const args = ['main.py', '--ctrl-port', String(this.ctrlPort)];
-    const pids = await this.matchProcess(args.join(' '));
+    const pids = await this.matchPort(this.ctrlPort);
 
     if (pids.length) {
       this.pids = pids;
@@ -123,9 +122,9 @@ class ConnectService extends PythonService {
 
     try {
       await new Promise((resolve, reject) =>
-        this.runSpawn(['main.py', '--ctrl-port', String(this.ctrlPort)], {
+        this.runSpawn(['main.py', '--ctrl-port', String(this.ctrlPort)], true, {
           stdoutCb: async () => {
-            const pids = await this.matchProcess(args.join(' '));
+            const pids = await this.matchPort(this.ctrlPort);
             if (pids.length) {
               this.pids = pids;
               await this.connect();
@@ -152,8 +151,7 @@ class ConnectService extends PythonService {
 
       // process
       if (!this.pids.length) {
-        const args = ['main.py', '--ctrl-port', String(this.ctrlPort)];
-        const pids = await this.matchProcess(args.join(' '));
+        const pids = await this.matchPort(this.ctrlPort);
         if (pids.length) this.pids = pids;
       }
 

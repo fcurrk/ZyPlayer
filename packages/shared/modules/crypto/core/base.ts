@@ -40,7 +40,7 @@ export const randomNanoid = (len?: number): string => {
 
   let id = '';
   for (let i = 0; i < len!; i++) {
-    id += URL_ALPHABET[63 & bytes[i]];
+    id += URL_ALPHABET[63 & bytes[i]]!;
   }
 
   return id;

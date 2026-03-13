@@ -38,16 +38,10 @@ export const CMS_ACTION_INPUT_TYPE = {
 } as const;
 export type ICmsActionInputType = (typeof CMS_ACTION_INPUT_TYPE)[keyof typeof CMS_ACTION_INPUT_TYPE];
 
-export const CMS_ACTION_BUTTON_TYPE = {
-  OK_CANCEL: 0,
-  OK_ONLY: 1,
-  CANCEL_ONLY: 2,
-  CUSTOM: 3,
-  SAVE: 4,
-} as const;
-export type ICmsActionButtonType = (typeof CMS_ACTION_BUTTON_TYPE)[keyof typeof CMS_ACTION_BUTTON_TYPE];
-export const CMS_ACTION_BUTTON_TYPES = Object.values(CMS_ACTION_BUTTON_TYPE);
-export type ICmsActionButtonTypes = keyof typeof CMS_ACTION_BUTTON_TYPES;
+export type ICmsActionButtonTypeEnum = 0 | 1 | 2 | 3 | 4;
+export type ICmsActionButtonType = boolean | ICmsActionButtonTypeEnum;
+
+export type ICmsActionButtonTypeDisplay = 'cancel' | 'confirm' | 'reset' | 'preview';
 
 export const CMS_ACTION_SPECIAL_ID_TYPE = {
   SELF_SEARCH: '__self_search__',
@@ -56,5 +50,8 @@ export const CMS_ACTION_SPECIAL_ID_TYPE = {
   REFRESH_LIST: '__refresh_list__',
   COPY: '__copy__',
   KEEP: '__keep__',
+  COMMENT_CLOSE: '__comment_close__',
 } as const;
 export type ICmsActionSpecialIdType = (typeof CMS_ACTION_SPECIAL_ID_TYPE)[keyof typeof CMS_ACTION_SPECIAL_ID_TYPE];
+export const CMS_ACTION_SPECIAL_ID_TYPES = Object.values(CMS_ACTION_SPECIAL_ID_TYPE);
+export type ICmsActionSpecialIdTypes = keyof typeof CMS_ACTION_SPECIAL_ID_TYPES;

@@ -17,7 +17,7 @@
     </div>
 
     <t-card :bordered="false" class="action-item" :header-style="{ padding: 0 }" :body-style="{ padding: 0 }">
-      <template v-if="showTitle" #title>
+      <template v-if="showTitle" #subtitle>
         {{ config.msg }}
       </template>
 
@@ -282,10 +282,11 @@ const getInputType = (item: Record<string, any>) => {
   return typeMap[type] ?? 'text';
 };
 
-const handleGetImageCoord = (item: Record<string, any>, event: MouseEvent) => {
-  const rect = (event.target as HTMLElement).getBoundingClientRect();
-  const x = Math.round(event.clientX - rect.left);
-  const y = Math.round(event.clientY - rect.top);
+const handleGetImageCoord = (item: Record<string, any>, event: { e: PointerEvent }) => {
+  const { e } = event;
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = Math.round(e.clientX - rect.left);
+  const y = Math.round(e.clientY - rect.top);
   const coord = `${x},${y}`;
 
   const key = getKey(item);

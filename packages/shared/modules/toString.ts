@@ -39,7 +39,7 @@ export const toString = (value: unknown): string => {
     try {
       if (isDate(value)) return value.toISOString();
       if (isMap(value)) return JSON5.stringify(Object.fromEntries(value));
-      if (isSet(value)) return JSON5.stringify(Array.from(value));
+      if (isSet(value)) return JSON5.stringify([...value]);
       if (isJson(value)) return JSON5.stringify(value);
       return JSON5.stringify(value);
     } catch {

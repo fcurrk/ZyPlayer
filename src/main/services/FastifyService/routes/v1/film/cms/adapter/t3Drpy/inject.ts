@@ -13,7 +13,7 @@ const valueStartsWith = (obj: Record<string, string>, propertyName: string, pref
 };
 
 const req = (url: string, cobj: Record<string, any>): { content: string; headers?: Record<string, string> } => {
-  const obj = Object.assign({}, cobj);
+  const obj = { ...cobj };
 
   if (obj.data) {
     obj.body = obj.data;

@@ -1,7 +1,9 @@
 <template>
   <t-dialog v-model:visible="formVisible" v-bind="attrsCustom">
     <template v-if="formData.title" #header>
-      {{ formData.title }}
+      <div class="action-header">
+        {{ formData.title }}
+      </div>
     </template>
 
     <template #body>
@@ -12,15 +14,19 @@
 
     <template #footer>
       <div class="action-footer">
-        <t-button v-if="showReset" variant="dashed" class="btn-modern" @click="handleReset">
+        <!-- <t-button v-if="parsedButton.includes('preview')" variant="dashed" class="btn-modern" @click="handlePreview">
+          {{ $t('common.preview') }}
+        </t-button> -->
+
+        <t-button v-if="parsedButton.includes('reset')" variant="dashed" class="btn-modern" @click="handleReset">
           {{ $t('common.reset') }}
         </t-button>
 
-        <t-button v-if="showCancel" theme="default" class="btn-modern" @click="handleCancel">
+        <t-button v-if="parsedButton.includes('cancel')" theme="default" class="btn-modern" @click="handleCancel">
           {{ $t('common.cancel') }}
         </t-button>
 
-        <t-button v-if="showConfirm" theme="primary" class="btn-modern" @click="handleSubmit">
+        <t-button v-if="parsedButton.includes('confirm')" theme="primary" class="btn-modern" @click="handleSubmit">
           {{ $t('common.confirm') }}
         </t-button>
       </div>
@@ -45,14 +51,7 @@ const props = defineProps({
 
 const emits = defineEmits(['update:visible', 'cancel', 'submit', 'timeout']);
 
-import type { ICmsActionButtonType, ICmsActionFormType, ICmsActionType } from '@shared/config/cmsAction';
-import {
-  CMS_ACTION_BUTTON_TYPE,
-  CMS_ACTION_BUTTON_TYPES,
-  CMS_ACTION_FORM_TYPE,
-  CMS_ACTION_TYPE,
-} from '@shared/config/cmsAction';
-import { isNil } from '@shared/modules/validate';
+import type { ICmsActionButtonTypeDisplay } from '@shared/config/cmsAction';
 import type { ICmsActionBase } from '@shared/types/cms';
 import type { Dialog, DialogProps } from 'tdesign-vue-next';
 import type { PropType } from 'vue';
@@ -61,7 +60,7 @@ import { computed, ref, useAttrs, watch } from 'vue';
 import ActionSectionView from './components/ActionSection.vue';
 import { parseActionButton } from './utils';
 
-const attrs: Partial<DialogProps> = useAttrs();
+const attrs = useAttrs() as DialogProps;
 
 const dialogRef = ref<InstanceType<typeof Dialog>>();
 const actionRef = ref<InstanceType<typeof ActionSectionView>>();
@@ -101,46 +100,14 @@ watch(
   { deep: true },
 );
 
-const parsedButton = computed(() => {
-  return (isNil(formData.value.button)
-    ? -1
-    : parseActionButton(formData.value.button)) as unknown as ICmsActionButtonType;
-});
+const parsedButton = computed<Array<ICmsActionButtonTypeDisplay>>(() =>
+  parseActionButton(formData.value.type, formData.value.button),
+);
 
-const shouldShowFooter = computed(() => {
-  const { button } = formData.value;
-  if (isNil(button)) return isInputType(formData.value.type);
-  const allow = new Set<ICmsActionButtonType>(CMS_ACTION_BUTTON_TYPES);
-  return allow.has(parsedButton.value);
-});
+const shouldShowFooter = computed(() => parsedButton.value.length > 0);
 
-const showCancel = computed(() => {
-  const { button, type } = formData.value;
-  if (isNil(button)) return isInputType(type);
-  const allow = new Set<ICmsActionButtonType>([
-    CMS_ACTION_BUTTON_TYPE.OK_CANCEL,
-    CMS_ACTION_BUTTON_TYPE.CANCEL_ONLY,
-    CMS_ACTION_BUTTON_TYPE.CUSTOM,
-  ]);
-  return allow.has(parsedButton.value);
-});
+// const handlePreview = () => {};
 
-const showConfirm = computed(() => {
-  const { button, type } = formData.value;
-  if (isNil(button)) return isInputType(type);
-  const allow = new Set<ICmsActionButtonType>([
-    CMS_ACTION_BUTTON_TYPE.OK_CANCEL,
-    CMS_ACTION_BUTTON_TYPE.OK_ONLY,
-    CMS_ACTION_BUTTON_TYPE.CUSTOM,
-  ]);
-  return allow.has(parsedButton.value);
-});
-
-const showReset = computed(() => parsedButton.value === CMS_ACTION_BUTTON_TYPE.CUSTOM);
-
-const isInputType = (type: ICmsActionType = CMS_ACTION_TYPE.INPUT): boolean => {
-  return CMS_ACTION_FORM_TYPE.includes(type as unknown as ICmsActionFormType);
-};
 const handleCancel = () => {
   emits('cancel');
   formVisible.value = false;
@@ -163,9 +130,10 @@ const onTimeout = () => {
 const handleSubmit = () => {
   actionRef.value?.submit();
 };
+
+defineExpose({
+  reset: handleReset,
+  submit: handleSubmit,
+});
 </script>
-<style lang="less" scoped>
-.action-content {
-  padding: 0 2px;
-}
-</style>
+<style lang="less" scoped></style>

@@ -333,7 +333,7 @@ class T3AlistAdapter {
       const checkPasswd = this.params?.[formatPath];
       if (checkPasswd !== undefined) password = this.params[formatPath];
     }
-    return Object.assign({}, password, { path });
+    return { ...password, ...{ path } };
   }
 
   private async getToken() {
