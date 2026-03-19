@@ -2,7 +2,17 @@
 
 > All notable changes to this project will be documented in this file.
 
-## 3.4.3
+## 3.4.4
+
+- 优化: mac/window侧边栏配色
+- 修复: windows x64平台调用npminstall失败
+- 修复: 改进更新行为，防止意外自动更新
+- 修复: window部分情况关闭窗口导致整个应用程序崩溃; arm平台打包失败
+- 变动: 依赖库升级
+
+[View on GitHub](https://github.com/Hiram-Wong/ZyPlayer/releases/tag/v3.4.4)
+
+## 3.4.3 (2026-03-14)
 
 - 特性: vscode增加mcp工具
 - 特性: 支持影视action动作操作(action组件)
@@ -13,7 +23,7 @@
 - 优化: webview组件 src参数以支持默认加载
 - 优化: terminal组件 渲染样式
 - 优化: github action cicd引用仓库node版本
-- 修复: 影视 适配器初始化失败无具体报错信息; 适配器类型标注优化; T3Alist和T3Catopen适配器ext参数序列化处理, T3Drpy和T3Catopen缓存冲突以及执行失败无日志打印; T3Py适配器引用错误参数, 关闭时zmq有未返回时将阻塞主进程, 启动时获取pid不全, 部分情况进程异常退出, 不激活venv导致环境异常, 使用端口替代参数关键词匹配进程;
+- 修复: 影视 适配器初始化失败无具体报错信息; 适配器类型标注优化; T3Alist和T3Catopen适配器ext参数序列化处理, T3Drpy和T3Catopen缓存冲突以及执行失败无日志打印; T3Py适配器引用错误参数, 关闭时zmq有未返回时将阻塞主进程, 启动时获取pid不全, 部分情况进程异常退出, 不激活venv导致环境异常, 使用端口替代参数关键词匹配进程; 数据源检测vod—tag为folder或action报错(直接放行, 检测无意义)
 - 修复: 实验室-写源工具 首次加载非js适配器时提示语法报错; 代理上传处理三元组失败
 - 修复: 直播配置 上传时文件筛选参数错误
 - 修复: 历史记录 影视缺失集数数据; 接口进度跳过参数不返回

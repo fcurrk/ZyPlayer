@@ -6,8 +6,8 @@ import type {
   ICmsActionInputType,
   ICmsActionSpecialIdType,
   ICmsActionType,
-} from '@shared/config/cmsAction';
-import type { IModels } from '@shared/types/db';
+} from '../config/cmsAction';
+import type { IModels } from '../types/db';
 
 export type IConstructorOptions = Omit<IModels['site'], 'categories'> & {
   categories: string[];

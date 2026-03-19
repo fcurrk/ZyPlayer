@@ -1,4 +1,4 @@
-import { isStrEmpty } from '@shared/modules/validate';
+import { isStrEmpty } from './validate';
 
 /**
  * Input validation and cleaning

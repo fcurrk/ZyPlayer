@@ -1,4 +1,4 @@
-import { isObject, isString } from '@shared/modules/validate';
+import { isObject, isString } from '../validate';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 

@@ -1,5 +1,6 @@
-import { isJson, isJsonStr, isStrEmpty, isString } from '@shared/modules/validate';
 import JSON5 from 'json5';
+
+import { isJson, isJsonStr, isStrEmpty, isString } from './validate';
 
 /**
  * Convert a JSON string to an object

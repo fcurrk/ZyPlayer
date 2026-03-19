@@ -1,16 +1,6 @@
-import {
-  isBoolean,
-  isDate,
-  isFunction,
-  isJson,
-  isMap,
-  isNil,
-  isNumber,
-  isSet,
-  isString,
-  isSymbol,
-} from '@shared/modules/validate';
 import JSON5 from 'json5';
+
+import { isBoolean, isDate, isFunction, isJson, isMap, isNil, isNumber, isSet, isString, isSymbol } from './validate';
 
 export const toString = (value: unknown): string => {
   if (isNil(value)) {

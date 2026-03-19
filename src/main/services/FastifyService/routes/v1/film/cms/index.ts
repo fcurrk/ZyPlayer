@@ -11,6 +11,7 @@ import {
   getProxySchema,
   getSearchSchema,
 } from '@server/schemas/v1/flim/cms';
+import { runRetryAsyncFunction } from '@shared/modules/function';
 import {
   isArray,
   isArrayEmpty,
@@ -304,34 +305,57 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
     { schema: getCheckSchema },
     async (req: FastifyRequest<{ Querystring: { uuid: string } & { type: 'search' | 'simple' | 'complete' } }>) => {
       const { uuid, type } = req.query || {};
+      const retry = 3;
       const adapter = await prepare(uuid);
 
       const checkSearch = async () => {
-        const keywords = ['我', '你', '他'];
-        const wd = keywords[Math.floor(Math.random() * keywords.length)];
-        const search = await adapter.search({ wd });
-        return !(isNil(search?.list) || isArrayEmpty(search.list) || search.list[0]?.vod_id === 'no_data');
+        await runRetryAsyncFunction(
+          async () => {
+            const keywords = ['我', '你', '他'];
+            const wd = keywords[Math.floor(Math.random() * keywords.length)];
+            return await adapter.search({ wd });
+          },
+          retry,
+          (result) => !isNil(result?.list) && !isArrayEmpty(result.list) && result.list[0]?.vod_id !== 'no_data',
+        );
+
+        return true;
       };
 
       const checkMain = async () => {
         const home = await adapter.home();
         if (isNil(home.class) || isArrayEmpty(home.class)) return false;
 
-        const tid = home.class[Math.floor(Math.random() * home.class.length)]?.type_id;
-        const category = await adapter.category({ tid });
-        if (isNil(category?.list) || isArrayEmpty(category.list) || category.list[0]?.vod_id === 'no_data')
-          return false;
+        let category = await runRetryAsyncFunction(
+          async () => {
+            const tid = home.class[Math.floor(Math.random() * home.class.length)]?.type_id;
+            return await adapter.category({ tid });
+          },
+          retry,
+          (result) => !isNil(result?.list) && !isArrayEmpty(result.list) && result.list[0]?.vod_id !== 'no_data',
+        );
 
-        const ids = category.list[Math.floor(Math.random() * category.list.length)]?.vod_id;
-        const detail = await adapter.detail({ ids });
-        if (
-          isNil(detail?.list) ||
-          isArrayEmpty(detail.list) ||
-          !detail.list[0]?.vod_play_url ||
-          !detail.list[0]?.vod_play_from
-        ) {
-          return false;
+        // ignore folder and action type check
+        const filteredList = category.list?.filter((item) => !['folder', 'action'].includes(item?.vod_tag)) || [];
+        const hasSpecialTags = category.list?.some((item) => ['folder', 'action'].includes(item?.vod_tag));
+        if (filteredList.length === 0 && hasSpecialTags) {
+          return true;
+        } else if (filteredList.length > 0) {
+          category = { ...category, list: filteredList };
         }
+
+        const detail = await runRetryAsyncFunction(
+          async () => {
+            const ids = category.list[Math.floor(Math.random() * category.list.length)]?.vod_id;
+            return await adapter.detail({ ids });
+          },
+          retry,
+          (result) =>
+            !isNil(result?.list) &&
+            !isArrayEmpty(result.list) &&
+            !!result.list[0]?.vod_play_url &&
+            !!result.list[0]?.vod_play_from,
+        );
 
         const vod_episode = formatEpisode(detail.list[0].vod_play_from, detail.list[0].vod_play_url)!;
         const resPlay = await adapter.play({
@@ -348,8 +372,13 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
       };
 
       const checks = typeCheckMap[type] || [];
-      for (const fn of checks) {
-        if (!(await fn())) return { code: 0, msg: 'ok', data: false };
+
+      try {
+        for (const fn of checks) {
+          if (!(await fn())) return { code: 0, msg: 'ok', data: false };
+        }
+      } catch {
+        return { code: 0, msg: 'ok', data: false };
       }
 
       return { code: 0, msg: 'ok', data: true };

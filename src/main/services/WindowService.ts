@@ -4,7 +4,7 @@ import { loggerService } from '@logger';
 import { appLocale } from '@main/services/AppLocale';
 import { configManager } from '@main/services/ConfigManager';
 import { APP_DATABASE_PATH, APP_FILE_PATH } from '@main/utils/path';
-import { isDev, isLinux, isMacOS, isMacOSTahoe, isPackaged, isWindows } from '@main/utils/systeminfo';
+import { isDev, isLinux, isMacOS, isMacOSTahoe, isPackaged, isWindows, isWindows22H2 } from '@main/utils/systeminfo';
 import { titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
@@ -678,7 +678,10 @@ export class WindowService {
         : {
             frame: false, // Frameless window for Windows and Linux
           }),
-      backgroundColor: isMacOS ? undefined : nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF',
+      ...(isWindows22H2 ? { backgroundMaterial: 'mica' } : {}),
+      ...(!isMacOS && !isWindows22H2
+        ? { backgroundColor: nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF' }
+        : {}),
       darkTheme: nativeTheme.shouldUseDarkColors,
       webPreferences: {
         webviewTag: true,
@@ -737,7 +740,10 @@ export class WindowService {
         : {
             frame: false, // Frameless window for Windows and Linux
           }),
-      backgroundColor: isMacOS ? undefined : nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF',
+      ...(isWindows22H2 ? { backgroundMaterial: 'mica' } : {}),
+      ...(!isMacOS && !isWindows22H2
+        ? { backgroundColor: nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF' }
+        : {}),
       darkTheme: nativeTheme.shouldUseDarkColors,
     });
 
@@ -803,7 +809,10 @@ export class WindowService {
         : {
             frame: false, // Frameless window for Windows and Linux
           }),
-      backgroundColor: isMacOS ? undefined : nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF',
+      ...(isWindows22H2 ? { backgroundMaterial: 'mica' } : {}),
+      ...(!isMacOS && !isWindows22H2
+        ? { backgroundColor: nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF' }
+        : {}),
       darkTheme: nativeTheme.shouldUseDarkColors,
       webPreferences: {
         webviewTag: true,

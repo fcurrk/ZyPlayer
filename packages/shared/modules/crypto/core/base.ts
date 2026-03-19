@@ -1,7 +1,8 @@
-import { toString } from '@shared/modules/toString';
-import { isPositiveFiniteNumber, isUUID } from '@shared/modules/validate';
 import type { UUIDTypes } from 'uuid';
 import { v3 as uuidv3, v4 as uuidv4, v5 as uuidv5 } from 'uuid';
+
+import { toString } from '../../toString';
+import { isPositiveFiniteNumber, isUUID } from '../../validate';
 
 /**
  * Generate a random version 4 UUID
