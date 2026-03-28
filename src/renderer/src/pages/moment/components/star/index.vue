@@ -3,7 +3,7 @@
     <div class="content">
       <div id="back-top" class="container">
         <div class="content-wrapper">
-          <t-row :gutter="[16, 4]" style="margin-left: -8px; margin-right: -8px">
+          <t-row :gutter="[16, 4]" :style="{ marginLeft: '-8px', marginRight: '-8px' }">
             <t-col
               v-for="item in starList"
               :key="item.id"

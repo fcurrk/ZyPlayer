@@ -27,7 +27,7 @@
           </t-form-item>
           <t-form-item :label="$t('common.id')" name="key">
             <div class="input-horizontal-item">
-              <t-input v-model="formData.key" style="flex: 1" />
+              <t-input v-model="formData.key" :style="{ flex: 1 }" />
               <t-button theme="default" @click="randomKeyEvent">{{ $t('common.random') }}</t-button>
             </div>
           </t-form-item>

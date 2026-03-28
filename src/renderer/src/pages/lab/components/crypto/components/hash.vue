@@ -21,7 +21,7 @@
             />
           </t-form-item>
           <t-form-item v-if="active.action === 'hmac'" :label="$t('pages.lab.crypto.field.key')" name="key">
-            <t-input-adornment style="flex: 1">
+            <t-input-adornment :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.keyEncode" auto-width>
                   <t-option

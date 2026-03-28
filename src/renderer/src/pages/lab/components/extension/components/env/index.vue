@@ -5,7 +5,7 @@
     </div>
     <div class="content">
       <template v-if="tableList.length">
-        <t-row :gutter="[8, 8]" style="margin-left: -4px; margin-right: -4px">
+        <t-row :gutter="[8, 8]" :style="{ marginLeft: '-4px', marginRight: '-4px' }">
           <t-col v-for="item in tableList" :key="item.name" :md="6" :xl="4" class="card">
             <t-card :title="item.name" :class="[!item.exist ? 'card-warning' : '']">
               <template #subtitle>
