@@ -1,6 +1,6 @@
-> Release date: December 30, 2026
+> Release date: March 30, 2026
 
-> Effective Date: December 30, 2026
+> Effective Date: March 30, 2026
 
 **Thank you for choosing to use `zyfun` (hereinafter referred to as the Software), the user (hereinafter referred to as you) before using the Software, please read and understand the following:**
 
