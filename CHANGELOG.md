@@ -5,7 +5,6 @@
 ## 3.4.4
 
 - 特性: 支持搜索联想
-- 优化: mac/window侧边栏配色
 - 修复: windows x64平台调用npminstall失败
 - 修复: 部分cms接口返回url接口数据不标准导致错误
 - 修复: webview组件 缺失请求头加载方法
