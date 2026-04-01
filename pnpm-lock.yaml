@@ -464,8 +464,8 @@ importers:
         specifier: ^1.0.15
         version: 1.0.15
       npm-check-updates:
-        specifier: ^19.6.6
-        version: 19.6.6
+        specifier: ^20.0.0
+        version: 20.0.0
       openai:
         specifier: ^6.33.0
         version: 6.33.0(ws@8.20.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))(zod@3.25.76)
@@ -7244,8 +7244,8 @@ packages:
   npm-bundled@1.1.2:
     resolution: {integrity: sha512-x5DHup0SuyQcmL3s7Rx/YQ8sbw/Hzg0rj48eN0dV7hf5cmQq5PXIeioroH3raV1QC1yh3uTYuMThvEQF3iKgGQ==}
 
-  npm-check-updates@19.6.6:
-    resolution: {integrity: sha512-AvlRcnlUEyBEJfblUSjYMJwYKvCIWDRuCDa6x3hyUMTMkI3kslmFm0LDqwgzQfshfNh0Z3ouKiA4fLjRN7HejQ==}
+  npm-check-updates@20.0.0:
+    resolution: {integrity: sha512-qCs02x51irGf0okCttwv8lHEO2NxT903IJ2bKpG82kIzkm6pfT3CoWB5YIvqY/wi/DdnYRfI7eVfCYYymQgvCg==}
     engines: {node: '>=20.0.0', npm: '>=8.12.1'}
     hasBin: true
 
@@ -17424,7 +17424,7 @@ snapshots:
     dependencies:
       npm-normalize-package-bin: 1.0.1
 
-  npm-check-updates@19.6.6: {}
+  npm-check-updates@20.0.0: {}
 
   npm-install-checks@4.0.0:
     dependencies:

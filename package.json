@@ -1,6 +1,6 @@
 {
   "name": "zyfun",
-  "version": "3.4.4-rc7",
+  "version": "3.4.4-rc8",
   "private": true,
   "description": "Discover the world by watching movies.",
   "main": "./out/main/index.js",
@@ -197,7 +197,7 @@
     "mpegts.js": "github:tsukumijima/mpegts.js#726d91becfa178a68bbea154175213ab6b3dfdba",
     "node-forge": "^1.4.0",
     "nplayer": "^1.0.15",
-    "npm-check-updates": "^19.6.6",
+    "npm-check-updates": "^20.0.0",
     "openai": "^6.33.0",
     "p-queue": "^9.1.0",
     "pako": "^2.1.0",
