@@ -12,6 +12,8 @@ export default {
   reset: '重置',
   delete: '刪除',
   save: '保存',
+  saveSuccess: '保存成功',
+  saveFail: '保存失敗',
   close: '關閉',
   open: '打開',
   execute: '執行',

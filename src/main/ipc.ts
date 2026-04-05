@@ -19,7 +19,6 @@ import { windowService } from '@main/services/WindowService';
 import { createDir, fileDelete, pathExist, readDirFaster, readFile, saveFile } from '@main/utils/file';
 import type { IHomePath, ISystemPath, IUserPath } from '@main/utils/path';
 import { getHomePath, getSystemPath, getUserPath } from '@main/utils/path';
-import { isSafeExternalUrl } from '@main/utils/security';
 import { execAsync } from '@main/utils/shell';
 import { arch, generateUserAgent, isLinux, isMacOS, isPortable, isWindows, platform } from '@main/utils/systeminfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
@@ -30,7 +29,7 @@ import { PROXY_TYPE } from '@shared/config/setting';
 import type { IShortcutConfig, IShortcutType } from '@shared/config/shortcut';
 import { WINDOW_NAME } from '@shared/config/window';
 import type { ILang } from '@shared/locales';
-import { isExternal, isHttp, isObject, isObjectEmpty, isPositiveFiniteNumber } from '@shared/modules/validate';
+import { isHttp, isObject, isObjectEmpty, isPositiveFiniteNumber, isSecurityScheme } from '@shared/modules/validate';
 import type { ProxyConfig } from 'electron';
 import { BrowserWindow, ipcMain, shell, webContents } from 'electron';
 import { getDomain } from 'tldts';
@@ -246,16 +245,13 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   );
 
   // open
-  ipcMain.handle(IPC_CHANNEL.OPEN_PATH, async (_, path: string) => {
-    await shell.openPath(path);
+  ipcMain.handle(IPC_CHANNEL.OPEN_PATH, (_, path: string) => {
+    shell.openPath(path);
   });
 
-  ipcMain.handle(IPC_CHANNEL.OPEN_WEBSITE, async (_, url: string) => {
-    if (!isSafeExternalUrl(url)) {
-      logger.warn(`Blocked shell.openExternal for untrusted URL scheme: ${url}`);
-      return;
-    }
-    await shell.openExternal(url);
+  ipcMain.handle(IPC_CHANNEL.OPEN_WEBSITE, (_, url: string) => {
+    if (!isSecurityScheme(url)) return;
+    shell.openExternal(url);
   });
 
   // path
@@ -543,7 +539,7 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   ipcMain.handle(
     IPC_CHANNEL.WINDOW_BROWSER,
     (_event: Electron.IpcMainInvokeEvent, url: string, headers?: Record<string, any>) => {
-      if (!isExternal(url)) return;
+      if (!isHttp(url)) return;
 
       let mainWindow = windowService.getWindow(WINDOW_NAME.BROWSER);
       if (mainWindow && !mainWindow.isDestroyed()) {

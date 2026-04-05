@@ -12,6 +12,8 @@ export default {
   reset: 'Reset',
   delete: 'Delete',
   save: 'Save',
+  saveSuccess: 'Save Success',
+  saveFail: 'Save Fail',
   close: 'Close',
   open: 'Open',
   execute: 'Execute',

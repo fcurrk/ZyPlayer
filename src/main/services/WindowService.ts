@@ -3,16 +3,22 @@ import { join } from 'node:path';
 import { loggerService } from '@logger';
 import { appLocale } from '@main/services/AppLocale';
 import { configManager } from '@main/services/ConfigManager';
-import { APP_DATABASE_PATH, APP_FILE_PATH } from '@main/utils/path';
-import { isSafeExternalUrl } from '@main/utils/security';
+import { handleProtocolUrl } from '@main/services/ProtocolClient';
+import { APP_DATABASE_PATH } from '@main/utils/path';
 import { isDev, isLinux, isMacOS, isMacOSTahoe, isPackaged, isWindows, isWindows22H2 } from '@main/utils/systeminfo';
-import { titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
+import { APP_NAME_PROTOCOL, titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
 import type { ISize } from '@shared/config/window';
 import { WINDOW_NAME, WINDOW_SIZE } from '@shared/config/window';
 import { convertUriToStandard, ELECTRON_TAG, isLocalhostURI, UNSAFE_HEADERS } from '@shared/modules/headers';
-import { isPositiveFiniteNumber, isUndefined } from '@shared/modules/validate';
+import {
+  isHttp,
+  isPositiveFiniteNumber,
+  isSecurityScheme,
+  isSystemScheme,
+  isUndefined,
+} from '@shared/modules/validate';
 import type { BrowserWindowConstructorOptions } from 'electron';
 import { app, BrowserWindow, ipcMain, nativeImage, nativeTheme, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
@@ -409,7 +415,7 @@ export class WindowService {
       }
 
       event.preventDefault();
-      if (isSafeExternalUrl(url)) {
+      if (isSecurityScheme(url)) {
         shell.openExternal(url);
       } else {
         logger.warn(`Blocked navigation to untrusted URL scheme: ${url}`);
@@ -419,24 +425,13 @@ export class WindowService {
     mainWindow.webContents.setWindowOpenHandler((details) => {
       const { url } = details;
 
-      const oauthProviderUrls = ['github.com', 'catni.cn', 'pagespy.org'];
-
-      if (oauthProviderUrls.some((link) => url.includes(link))) {
-        return {
-          action: 'allow',
-          overrideBrowserWindowOptions: {
-            webPreferences: {
-              partition: 'persist:webview',
-            },
-          },
-        };
-      }
-
-      if (url.includes('http://file/')) {
-        const fileName = url.replace('http://file/', '');
-        const filePath = join(APP_FILE_PATH, fileName);
-        shell.openPath(filePath).catch((error) => logger.error('Failed to open file:', error));
-      } else if (isSafeExternalUrl(details.url)) {
+      if (isSystemScheme(url)) {
+        shell.openExternal(url).catch((err) => {
+          logger.error(`Failed to open external URL: ${url}`, err as Error);
+        });
+      } else if (url.startsWith(APP_NAME_PROTOCOL)) {
+        handleProtocolUrl(url);
+      } else if (isHttp(details.url)) {
         let window = this.getWindow(WINDOW_NAME.BROWSER);
         if (window && !window.isDestroyed()) {
           this.showWindow(window);

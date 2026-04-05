@@ -8,7 +8,7 @@ import { isLinux } from '@main/utils/systeminfo';
 import { APP_NAME, APP_NAME_ALIAS } from '@shared/config/appinfo';
 import { LOG_MODULE } from '@shared/config/logger';
 
-import { windowService } from './WindowService';
+import { handleSubProtocolUrl } from './schemaSub';
 
 const logger = loggerService.withContext(LOG_MODULE.APP_PROTOCOL);
 
@@ -29,21 +29,13 @@ export function handleProtocolUrl(url: string) {
 
   // Parse the URL and extract parameters
   const urlObj = new URL(url);
-  const params = new URLSearchParams(urlObj.search);
+  // const params = new URLSearchParams(urlObj.search);
 
-  // switch (urlObj.hostname.toLowerCase()) {
-  //   case 'data':
-  //     return;
-  // }
-
-  // You can send the data to your renderer process
-  const mainWindow = windowService.getWindow('main');
-
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('protocol-data', {
-      url,
-      params: Object.fromEntries(params.entries()),
-    });
+  switch (urlObj.hostname.toLowerCase()) {
+    case 'sub': {
+      handleSubProtocolUrl(urlObj);
+      break;
+    }
   }
 }
 

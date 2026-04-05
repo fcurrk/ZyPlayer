@@ -154,7 +154,7 @@ import { APP_NAME } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { WINDOW_NAME } from '@shared/config/window';
 import { generateStrUUID } from '@shared/modules/crypto';
-import { isExternal } from '@shared/modules/validate';
+import { isSecurityScheme } from '@shared/modules/validate';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -295,7 +295,7 @@ const handleMoreDrawer = () => {
 
 const handleMoreOpenSystemBrowser = () => {
   const url = webviewRef.value?.getURL();
-  if (isExternal(url)) {
+  if (isSecurityScheme(url)) {
     window.electron.ipcRenderer.invoke(IPC_CHANNEL.OPEN_WEBSITE, url);
   } else {
     MessagePlugin.warning(t('pages.browser.message.noSupportProtocol'));

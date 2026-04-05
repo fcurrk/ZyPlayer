@@ -260,14 +260,23 @@ export function isHttp(value: unknown, strict: boolean = false): boolean {
 }
 
 /**
- * Check if URL is an external resource (http, mailto, tel)
- * @param value - URL string to validate
- * @returns Returns true if URL is an external resource, otherwise false
+ * Check if value is a security scheme (http, https, file, zy, mailto, tel)
+ * @param value - String to check
+ * @returns Returns true if URL is a security scheme, otherwise false
  */
-export function isExternal(value: unknown): boolean {
+export function isSecurityScheme(value: unknown): boolean {
   if (!isString(value) || isStrEmpty(value)) return false;
-  // eslint-disable-next-line regexp/no-unused-capturing-group
-  return /^(https?:|file:|mailto:|tel:)/i.test(value);
+  return /^(?:https?:\/\/|file:\/\/|zy:\/\/|mailto:|tel:)/i.test(value);
+}
+
+/**
+ * Check if value is a system scheme (file, mailto, tel)
+ * @param value - String to check
+ * @returns Returns true if it's a system scheme, otherwise false
+ */
+export function isSystemScheme(value: unknown): boolean {
+  if (!isString(value) || isStrEmpty(value)) return false;
+  return /^(?:file:\/\/|mailto:|tel:)/i.test(value);
 }
 
 /**
@@ -442,7 +451,8 @@ export default {
   isValEmpty,
   isPathMatch,
   isHttp,
-  isExternal,
+  isSecurityScheme,
+  isSystemScheme,
   isURI,
   isLowerCase,
   isUpperCase,
