@@ -119,12 +119,14 @@ const setup = () => {
   });
 
   window.electron.ipcRenderer.on(IPC_CHANNEL.MEDIA_BROWSE, (_event, status) => {
-    if (headerFormData.value.browse && status) {
-      window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_HIDE, WINDOW_NAME.PLAYER);
-      playerRef.value?.pause();
-    } else {
-      window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_SHOW, WINDOW_NAME.PLAYER);
-      playerRef.value?.play();
+    if (headerFormData.value.browse) {
+      if (status) {
+        window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_HIDE, WINDOW_NAME.PLAYER);
+        playerRef.value?.pause();
+      } else {
+        window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_SHOW, WINDOW_NAME.PLAYER);
+        playerRef.value?.play();
+      }
     }
   });
 
