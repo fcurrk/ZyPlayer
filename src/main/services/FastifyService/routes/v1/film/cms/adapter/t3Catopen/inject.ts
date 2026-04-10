@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 
 import { batchFetch, fetch } from '@main/utils/hiker/request/asyncAxios';
-import { headersPascalCase } from '@shared/modules/headers';
+import JSON5 from 'json5';
 
 const hasPropertyIgnoreCase = (obj: Record<string, string>, propertyName: string) => {
   return Object.keys(obj).some((key) => key.toLowerCase() === propertyName.toLowerCase());
@@ -39,12 +39,11 @@ const req = async (
   if (url === 'https://api.nn.ci/ocr/b64/text' && obj.headers) {
     obj.headers['Content-Type'] = 'text/plain';
   }
-  obj.headers = headersPascalCase(obj.headers);
 
   const res: { content: string; headers?: Record<string, string> } = { content: '' };
   let resp: any = await fetch(url, obj);
   if (obj.withHeaders) {
-    resp = JSON.parse(resp!);
+    resp = JSON5.parse(resp!);
     res.content = resp.body;
     res.headers = Object.fromEntries(Object.entries(resp.headers || {}).map(([k, v]) => [k, v?.[0]]));
   } else {
