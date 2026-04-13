@@ -12,6 +12,8 @@ export default {
   reset: 'Reset',
   delete: 'Delete',
   save: 'Save',
+  saveSuccess: 'Save Success',
+  saveFail: 'Save Fail',
   close: 'Close',
   open: 'Open',
   execute: 'Execute',
@@ -107,6 +109,9 @@ export default {
   connect: 'Connect',
   reconnect: 'Reconnect',
   adapter: 'Adapter',
+  auth: 'Auth',
+  username: 'Username',
+  password: 'Password',
   request: {
     title: 'Request',
     param: 'Parameters',

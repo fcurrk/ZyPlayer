@@ -6,6 +6,7 @@ import { appLocale } from '@main/services/AppLocale';
 import { appService } from '@main/services/AppService';
 import AppUpdater from '@main/services/AppUpdater';
 import { binaryService } from '@main/services/BinaryService';
+import { configManager } from '@main/services/ConfigManager';
 import { fastifyService } from '@main/services/FastifyService';
 import { fileStorage } from '@main/services/FileStorage';
 import { menuService } from '@main/services/MenuService';
@@ -19,7 +20,7 @@ import { createDir, fileDelete, pathExist, readDirFaster, readFile, saveFile } f
 import type { IHomePath, ISystemPath, IUserPath } from '@main/utils/path';
 import { getHomePath, getSystemPath, getUserPath } from '@main/utils/path';
 import { execAsync } from '@main/utils/shell';
-import { arch, isLinux, isMacOS, isPortable, isWindows, platform } from '@main/utils/systeminfo';
+import { arch, generateUserAgent, isLinux, isMacOS, isPortable, isWindows, platform } from '@main/utils/systeminfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
 import type { INotification } from '@shared/config/notification';
@@ -28,9 +29,10 @@ import { PROXY_TYPE } from '@shared/config/setting';
 import type { IShortcutConfig, IShortcutType } from '@shared/config/shortcut';
 import { WINDOW_NAME } from '@shared/config/window';
 import type { ILang } from '@shared/locales';
-import { isExternal, isHttp, isPositiveFiniteNumber } from '@shared/modules/validate';
+import { isHttp, isObject, isObjectEmpty, isPositiveFiniteNumber, isSecurityScheme } from '@shared/modules/validate';
 import type { ProxyConfig } from 'electron';
 import { BrowserWindow, ipcMain, shell, webContents } from 'electron';
+import { getDomain } from 'tldts';
 
 const logger = loggerService.withContext(LOG_MODULE.APP_IPC);
 
@@ -243,12 +245,13 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
   );
 
   // open
-  ipcMain.handle(IPC_CHANNEL.OPEN_PATH, async (_, path: string) => {
-    await shell.openPath(path);
+  ipcMain.handle(IPC_CHANNEL.OPEN_PATH, (_, path: string) => {
+    shell.openPath(path);
   });
 
-  ipcMain.handle(IPC_CHANNEL.OPEN_WEBSITE, async (_, url: string) => {
-    await shell.openExternal(url);
+  ipcMain.handle(IPC_CHANNEL.OPEN_WEBSITE, (_, url: string) => {
+    if (!isSecurityScheme(url)) return;
+    shell.openExternal(url);
   });
 
   // path
@@ -351,8 +354,8 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
       if (isPositiveFiniteNumber(mode)) {
         if (mode === 1) {
           webview.setWindowOpenHandler(({ url }) => {
-            const win = BrowserWindow.fromWebContents(event.sender)!;
-            win.webContents.send(IPC_CHANNEL.WEBVIEW_LINK_BLOCK_RELAY, url);
+            const mainWindow = BrowserWindow.fromWebContents(event.sender)!;
+            mainWindow.webContents.send(IPC_CHANNEL.WEBVIEW_LINK_BLOCK_RELAY, url);
             return { action: 'deny' };
           });
         } else if (mode === 2) {
@@ -361,6 +364,46 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
           });
         }
       }
+    },
+  );
+
+  ipcMain.handle(
+    IPC_CHANNEL.WEBVIEW_HEADER_BLOCK,
+    (_, webviewId: number, rawUrl: string, headers?: Record<string, any>) => {
+      const webview = webContents.fromId(webviewId);
+      if (!webview) return;
+
+      const isSameDomain = (source: string, raw: string) => {
+        try {
+          return getDomain(source) === getDomain(raw);
+        } catch {
+          return false;
+        }
+      };
+
+      webview.session.webRequest.onBeforeSendHeaders(null); // Clear previous listeners to avoid stacking
+
+      const defaultUA = generateUserAgent();
+      webview.setUserAgent(defaultUA);
+
+      webview.session.webRequest.onBeforeSendHeaders({ urls: ['*://*/*'] }, (details, callback) => {
+        const { requestHeaders, url } = details;
+        const ua = configManager.ua;
+        const language = appLocale.defaultLang();
+
+        requestHeaders['User-Agent'] = ua;
+        requestHeaders['Accept-Language'] = `${language}, en;q=0.9, *;q=0.5`;
+
+        if (!isSameDomain(url, rawUrl)) return callback({ requestHeaders });
+
+        if (!isObject(headers) || isObjectEmpty(headers)) return callback({ requestHeaders });
+
+        for (const key in headers) {
+          requestHeaders[key] = headers[key];
+        }
+
+        callback({ requestHeaders });
+      });
     },
   );
 
@@ -493,20 +536,23 @@ export function registerIpc(mainWindow: BrowserWindow, app: Electron.App) {
     }
   });
 
-  ipcMain.handle(IPC_CHANNEL.WINDOW_BROWSER, (_event: Electron.IpcMainInvokeEvent, url: string) => {
-    if (!isExternal(url)) return;
+  ipcMain.handle(
+    IPC_CHANNEL.WINDOW_BROWSER,
+    (_event: Electron.IpcMainInvokeEvent, url: string, headers?: Record<string, any>) => {
+      if (!isHttp(url)) return;
 
-    let window = windowService.getWindow(WINDOW_NAME.BROWSER);
-    if (window && !window.isDestroyed()) {
-      windowService.showWindow(window);
-      window.webContents.send(IPC_CHANNEL.BROWSER_NAVIGATE, url);
-    } else {
-      window = windowService.createBrowserWindow();
-      window.webContents.once('did-stop-loading', () => {
-        setTimeout(() => {
-          window!.webContents.send(IPC_CHANNEL.BROWSER_NAVIGATE, url);
-        }, 1000);
-      });
-    }
-  });
+      let mainWindow = windowService.getWindow(WINDOW_NAME.BROWSER);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        windowService.showWindow(mainWindow);
+        mainWindow.webContents.send(IPC_CHANNEL.BROWSER_NAVIGATE, url, headers);
+      } else {
+        mainWindow = windowService.createBrowserWindow();
+        mainWindow.webContents.once('did-stop-loading', () => {
+          setTimeout(() => {
+            mainWindow!.webContents.send(IPC_CHANNEL.BROWSER_NAVIGATE, url, headers);
+          }, 1000);
+        });
+      }
+    },
+  );
 }

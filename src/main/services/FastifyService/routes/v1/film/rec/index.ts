@@ -1,9 +1,18 @@
 import { dbService } from '@main/services/DbService';
-import { getBarrageSchema, getHotSchema, getMatchSchema, sendBarrageSchema } from '@server/schemas/v1/flim/rec';
+import {
+  getAssociationSchema,
+  getBarrageSchema,
+  getHotSchema,
+  getMatchSchema,
+  sendBarrageSchema,
+} from '@server/schemas/v1/flim/rec';
+import type { IRecAssociationType, IRecHotType } from '@shared/config/setting';
+import { REC_ASSOCIATION_TYPE, REC_HOT_TYPE } from '@shared/config/setting';
 import { isObject, isObjectEmpty, isStrEmpty, isString } from '@shared/modules/validate';
 import type { IBarrageSendOptions } from '@shared/types/barrage';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 
+import fetchAssociation from './utils/association';
 import { fetchBarrage, sendBarrage } from './utils/barrage';
 import { fetchDoubanRecomm } from './utils/douban';
 import fetchHot from './utils/hot';
@@ -43,7 +52,7 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
     async (
       req: FastifyRequest<{
         Querystring: {
-          source?: 'komect' | 'douban' | 'quark' | 'baidu' | 'kylive' | 'enlightent';
+          source?: IRecHotType;
           date?: string;
           type?: number;
           page?: number;
@@ -54,11 +63,39 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
       const { page = 1, pageSize = 10, source, date, type = 1 } = req.query || {};
 
       const dataSource = source || (await dbService.setting.getValue('hot')) || 'komect';
-      if (!['komect', 'douban', 'quark', 'baidu', 'kylive', 'enlightent'].includes(dataSource)) {
+      const allow = Object.values(REC_HOT_TYPE);
+      if (!allow.includes(dataSource)) {
         return { code: 0, msg: 'ok', data: [] };
       }
 
       const res = await fetchHot[dataSource]({ date, type, page, pageSize });
+      return { code: 0, msg: 'ok', data: res };
+    },
+  );
+
+  fastify.get(
+    `/${API_PREFIX}/association`,
+    { schema: getAssociationSchema },
+    async (
+      req: FastifyRequest<{
+        Querystring: {
+          source?: IRecAssociationType;
+          kw: string;
+          page?: number;
+          pageSize?: number;
+        };
+      }>,
+    ) => {
+      const { page = 1, pageSize = 10, source, kw } = req.query || {};
+
+      const dataSource = source || (await dbService.setting.getValue('association')) || 'douban';
+      const allow = Object.values(REC_ASSOCIATION_TYPE);
+
+      if (!allow.includes(dataSource)) {
+        return { code: 0, msg: 'ok', data: [] };
+      }
+
+      const res = await fetchAssociation[dataSource]({ kw, page, pageSize });
       return { code: 0, msg: 'ok', data: res };
     },
   );

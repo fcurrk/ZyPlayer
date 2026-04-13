@@ -228,7 +228,7 @@ sudo yum install xdg-utils
       "updatedAt": 1768310498000 // <3.4.1 启用> 更新时间戳(ms)
     }
   ],
-  "sites": [
+  "site": [
     {
       "id": "fddfb425-6fd9-0b39-459f-a21f69739a6e", // 数据唯一uuidv4标识(不可重复)
       "key": "51793af6-c923-5504-85db-0ef686624dec", // <3.4.0 启用> 业务唯一标识(不可重复)
@@ -266,12 +266,13 @@ sudo yum install xdg-utils
       "lang": "zh_CN", // <3.3.4 启用> 语言(<=3.4.0: zh_CN=简体中文,en_US=英文 | system=更随系统,zh_CN=简体中文,zh_TW=繁体中文,en_US=英文)
       "zoom": 1, // <3.4.1 启用> 界面缩放比例(预留)
       "proxy": {
-        "type": "none", // 代理类型(system=系统代理,custom=自定义代理,direct=直连)
+        "type": "system", // 代理类型(system=系统代理,custom=自定义代理,direct=直连)
         "url": "", // 代理地址(支持socks5/http/https协议)
         "bypass": "" // 忽略主机名
       }, <3.4.1 启用> 代理设置
       "defaultHot": "kylive", // <3.4.1 **弃用**> 热搜(kylive=酷云数据,enlightent=云合数据)
-      "hot": "kylive", // <3.4.1 启用> 热搜(baidu=百度,douban=豆瓣,enlightent=云合,komect=移动爱家,kylive=酷云,quark=夸克)
+      "hot": "kylive", // <3.4.1 启用> 热搜(douban=豆瓣,enlightent=云合,komect=移动爱家,hisense=海信,kylive=酷云)
+      "association": "douban", // <3.4.4 启用> 搜索联想(douban=豆瓣,hisense=海信,snm=喜粤TV)
       "defaultSearchRecommend": "site", // 搜索推荐 site:站点 quark:夸克 baidu:百度 douban:豆瓣  弃用
       "defaultSearchType": "site", // <3.4.1 **弃用**> 全局搜索模式 site:本站 group:组内 all:全部
       "defaultFilterType": false, // <3.3.7 启用, 3.4.1 **弃用**> 影视搜索过滤关键词
@@ -408,7 +409,6 @@ sudo yum install xdg-utils
 - **产品设计**：参与设计讨论
 - **编写文档**：改进用户手册和指南
 - **社区参与**：加入讨论并帮助用户
-- **用爱发电**：支持项目发展(不限于资金,服务器等) <[kofi](https://ko-fi.com/hiramwong)> <[爱发电](https://ifdian.net/a/hiram)>
 
 [![][github-contributors-shield]][github-contributors-link]
 

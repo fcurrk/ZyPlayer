@@ -1,4 +1,5 @@
 import { Schema } from '@main/types/server';
+import { REC_ASSOCIATION_TYPE, REC_HOT_TYPE } from '@shared/config/setting';
 import { Type } from '@sinclair/typebox';
 
 import { createHttpSuccessResponseSchema } from '../../base';
@@ -66,13 +67,43 @@ export const getHotSchema = {
   description: 'Recommend Hot.',
   querystring: Type.Optional(
     Type.Object({
-      source: Type.Optional(
-        Type.String({ enum: ['komect', 'douban', 'quark', 'baidu', 'kylive', 'enlightent'], description: 'source' }),
-      ),
+      source: Type.Optional(Type.String({ enum: Object.values(REC_HOT_TYPE), description: 'source' })),
       date: Type.Optional(Type.String({ description: 'date' })),
       type: Type.Optional(
         Type.Integer({ format: 'int32', enum: [1, 2, 3, 4], description: '1:movie 2:tv 3:art 4:anime(child)' }),
       ),
+      page: Type.Optional(Type.Integer({ format: 'int32', description: 'page' })),
+      pageSize: Type.Optional(Type.Integer({ format: 'int32', description: 'pageSize' })),
+    }),
+  ),
+  response: {
+    200: createHttpSuccessResponseSchema(
+      Type.Array(
+        Type.Object({
+          vod_id: Type.Union([Type.String(), Type.Integer({ format: 'int32' })]),
+          vod_name: Type.String(),
+          vod_hot: Type.Number(),
+          vod_pic: Type.Optional(Type.String()),
+          vod_remarks: Type.Optional(Type.String()),
+        }),
+      ),
+      { description: 'Successful Operation' },
+    ),
+    default: {
+      description: 'Unexpected Error',
+      $ref: Schema.ApiReponseError,
+    },
+  },
+};
+
+export const getAssociationSchema = {
+  tags: [API_PREFIX],
+  summary: 'Get Recommend Association',
+  description: 'Recommend Association.',
+  querystring: Type.Optional(
+    Type.Object({
+      source: Type.Optional(Type.String({ enum: Object.values(REC_ASSOCIATION_TYPE), description: 'source' })),
+      kw: Type.String({ description: 'keyword' }),
       page: Type.Optional(Type.Integer({ format: 'int32', description: 'page' })),
       pageSize: Type.Optional(Type.Integer({ format: 'int32', description: 'pageSize' })),
     }),

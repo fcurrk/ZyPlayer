@@ -18,18 +18,31 @@ export default {
         large: '大',
       },
     },
-    hot: '热榜',
-    site: {
-      title: '站点',
-      hotMap: {
+    hot: {
+      title: '热榜',
+      map: {
         baidu: '百度',
         douban: '豆瓣',
         enlightent: '云合',
+        hisense: '海信',
         kylive: '酷云',
         komect: '移动爱家',
         quark: '夸克',
       },
-      searchMap: {
+    },
+    association: {
+      title: '联想',
+      map: {
+        douban: '豆瓣',
+        hisense: '海信',
+        komect: '移动爱家',
+        iqiyi: '爱奇艺',
+        snm: '喜粤TV',
+      },
+    },
+    site: {
+      title: '站点',
+      search: {
         local: '本站',
         group: '组内',
         all: '全部',

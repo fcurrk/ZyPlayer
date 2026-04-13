@@ -255,7 +255,7 @@ class T0XmlAdapter {
         });
 
         try {
-          const queryResult = JSONPath({ path: '$.url', json: resp });
+          const queryResult = JSONPath({ path: '$.url', json: resp })?.[0] || '';
           return { parse: 0, url: queryResult };
         } catch {
           return { parse: 1, url: play };

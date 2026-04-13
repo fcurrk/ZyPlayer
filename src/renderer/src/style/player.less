@@ -4,6 +4,13 @@
   overflow: hidden;
 
   :deep(.@{starter-prefix}) {
+    &-overlay {
+      background-color: var(--td-bg-color-component);
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+    }
+
     &-layout {
       height: 100%;
       width: 100%;
@@ -139,9 +146,10 @@
         }
 
         .right {
-          .system-controls {
+          .system-function {
             @media only screen and (width <= 640px) {
-              .control-button {
+              .control-button,
+              .browse-button {
                 color: #fbfbfb;
 
                 &:not(.t-is-disabled, .t-button--ghost):hover {

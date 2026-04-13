@@ -101,7 +101,7 @@ type OpenAIStreamChunk =
     }
   | string;
 
-const settingStore = useSettingStore();
+const storeSetting = useSettingStore();
 
 const inputValue = ref<string>('');
 const actionComment = ref<'good' | 'bad' | ''>('');
@@ -132,7 +132,7 @@ const contentProps = ref({
     engine: 'cherry-markdown',
     options: {
       themeSettings: {
-        codeBlockTheme: settingStore.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK,
+        codeBlockTheme: storeSetting.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK,
       } as TdChatContentMDOptions,
     },
   },

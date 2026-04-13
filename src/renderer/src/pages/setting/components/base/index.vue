@@ -60,15 +60,28 @@
           <span class="title" @click="handleResetConf('zoom')">{{ $t('common.reset') }}</span>
         </t-space>
       </t-form-item>
-      <t-form-item :label="$t('pages.setting.base.hot')" name="hot">
-        <t-select v-model="formData.hot" :options="HOT_OPTIONS" :style="{ width: '296px' }" />
+      <t-form-item :label="$t('common.search')" name="hot">
+        <t-space align="center">
+          <t-select
+            v-model="formData.hot"
+            :options="HOT_OPTIONS"
+            :label="$t('pages.setting.base.hot.title')"
+            :style="{ width: '140px' }"
+          />
+          <t-select
+            v-model="formData.association"
+            :options="ASSOCIATION_OPTIONS"
+            :label="$t('pages.setting.base.association.title')"
+            :style="{ width: '140px' }"
+          />
+        </t-space>
       </t-form-item>
       <t-form-item :label="$t('pages.film.title')" name="site">
         <t-space align="center">
           <t-select v-model="formData.site.searchMode" :label="$t('common.search')" :style="{ width: '140px' }">
-            <t-option value="site" :label="$t('pages.setting.base.site.searchMap.local')"></t-option>
-            <t-option value="group" :label="$t('pages.setting.base.site.searchMap.group')"></t-option>
-            <t-option value="all" :label="$t('pages.setting.base.site.searchMap.all')"></t-option>
+            <t-option value="site" :label="$t('pages.setting.base.site.search.local')"></t-option>
+            <t-option value="group" :label="$t('pages.setting.base.site.search.group')"></t-option>
+            <t-option value="all" :label="$t('pages.setting.base.site.search.all')"></t-option>
           </t-select>
           <t-select v-model="formData.site.filterMode" :label="$t('common.filter')" :style="{ width: '140px' }">
             <t-option :value="true" :label="$t('common.enable')"></t-option>
@@ -225,7 +238,7 @@
 </template>
 <script setup lang="ts">
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
-import { AIGC_PROVIDER_TYPE, PLAYER_TYPE, REC_HOT_TYPE } from '@shared/config/setting';
+import { AIGC_PROVIDER_TYPE, PLAYER_TYPE, REC_ASSOCIATION_TYPE, REC_HOT_TYPE } from '@shared/config/setting';
 import type { ISetting } from '@shared/config/tblSetting';
 import { settingObj as tblSetting } from '@shared/config/tblSetting';
 import { THEME } from '@shared/config/theme';
@@ -294,12 +307,20 @@ const LANG_OPTIONS = computed(() => [
 ]);
 
 const HOT_OPTIONS = computed(() => [
-  { value: REC_HOT_TYPE.BAIDU, label: t('pages.setting.base.site.hotMap.baidu') },
-  { value: REC_HOT_TYPE.DOUBAN, label: t('pages.setting.base.site.hotMap.douban') },
-  { value: REC_HOT_TYPE.ENLIGHTENT, label: t('pages.setting.base.site.hotMap.enlightent') },
-  { value: REC_HOT_TYPE.KOMECT, label: t('pages.setting.base.site.hotMap.komect') },
-  { value: REC_HOT_TYPE.KYLIVE, label: t('pages.setting.base.site.hotMap.kylive') },
-  { value: REC_HOT_TYPE.QUARK, label: t('pages.setting.base.site.hotMap.quark') },
+  // { value: REC_HOT_TYPE.BAIDU, label: t('pages.setting.base.hot.map.baidu') },
+  { value: REC_HOT_TYPE.DOUBAN, label: t('pages.setting.base.hot.map.douban') },
+  { value: REC_HOT_TYPE.ENLIGHTENT, label: t('pages.setting.base.hot.map.enlightent') },
+  { value: REC_HOT_TYPE.HISENSE, label: t('pages.setting.base.hot.map.hisense') },
+  { value: REC_HOT_TYPE.KOMECT, label: t('pages.setting.base.hot.map.komect') },
+  { value: REC_HOT_TYPE.KYLIVE, label: t('pages.setting.base.hot.map.kylive') },
+  // { value: REC_HOT_TYPE.QUARK, label: t('pages.setting.base.hot.map.quark') },
+]);
+
+const ASSOCIATION_OPTIONS = computed(() => [
+  { value: REC_ASSOCIATION_TYPE.DOUBAN, label: t('pages.setting.base.association.map.douban') },
+  { value: REC_ASSOCIATION_TYPE.HISENSE, label: t('pages.setting.base.association.map.hisense') },
+  // { value: REC_ASSOCIATION_TYPE.IQIYI, label: t('pages.setting.base.association.map.iqiyi') },
+  { value: REC_ASSOCIATION_TYPE.SNM, label: t('pages.setting.base.association.map.snm') },
 ]);
 
 const PLAYER_OPTIONS = computed(() => [
@@ -369,7 +390,7 @@ watch(
 );
 
 watch(
-  () => [formData.value.hot, formData.value.site],
+  () => [formData.value.hot, formData.value.association, formData.value.site],
   () => emitter.emit(emitterChannel.REFRESH_SEARCH_CONFIG, { source: emitterSource.SETTING_BASE }),
   { deep: true },
 );

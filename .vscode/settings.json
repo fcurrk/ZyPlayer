@@ -20,9 +20,6 @@
   "[markdown]": {
     "files.trimTrailingWhitespace": false
   },
-  "[scss]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -51,6 +48,12 @@
   "i18n-ally.sortKeys": true,
   "i18n-ally.sourceLanguage": "zh-CN",
   "i18n-ally.usage.derivedKeyRules": ["{key}_one", "{key}_other"],
+  "js/ts.experimental.useTsgo": true,
+  // "js/ts.tsserver.automaticTypeAcquisition.enabled": true,
+  // "js/ts.tsserver.experimental.enableProjectDiagnostics": false,
+  // "js/ts.tsserver.maxMemory": 4096,
+  // "js/ts.preferences.autoImportFileExcludePatterns": ["@xterm/xterm", "@xterm/headless"],
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "search.exclude": {
     "**/*.min.js": true,
     "**/*.svg": true,
@@ -58,10 +61,5 @@
     "**/node_modules/**": true,
     "out/**": true,
     "patches/**": true
-  },
-  "typescript.disableAutomaticTypeAcquisition": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
-  // "typescript.experimental.useTsgo": true
-  "typescript.tsserver.maxTsServerMemory": 4096
+  }
 }

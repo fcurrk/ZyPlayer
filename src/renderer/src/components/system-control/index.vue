@@ -32,7 +32,7 @@
         @click="handleMaximizeWindow"
       >
         <template #icon>
-          <copy-icon v-if="active.isMaximized" style="transform: scaleX(-1)" />
+          <copy-icon v-if="active.isMaximized" :style="{ transform: 'scaleX(-1)' }" />
           <rectangle-icon v-else :style="{ widh: '14px', height: '14px' }" />
         </template>
       </t-button>

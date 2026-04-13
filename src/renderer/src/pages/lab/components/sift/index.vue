@@ -220,6 +220,7 @@ const editConf = ref<IEditorOptions['normal']>({
   wordWrap: 'off',
 });
 const termConf = ref<ITerminalOptions>({
+  allowProposedApi: true,
   convertEol: true,
   cursorBlink: false,
   cursorStyle: 'block',

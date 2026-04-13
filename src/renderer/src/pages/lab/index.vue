@@ -18,7 +18,7 @@ import CommonNav from '@/components/common-nav/index.vue';
 import { t } from '@/locales';
 import { useSettingStore } from '@/store';
 
-const settingStore = useSettingStore();
+const storeSetting = useSettingStore();
 
 const componentMap = {
   crypto: defineAsyncComponent(() => import('./components/crypto/index.vue')),
@@ -30,9 +30,9 @@ const componentMap = {
   extension: defineAsyncComponent(() => import('./components/extension/index.vue')),
 };
 
-const currentComponent = shallowRef(componentMap[settingStore.nav.lab || 'crypto']);
+const currentComponent = shallowRef(componentMap[storeSetting.nav.lab || 'crypto']);
 
-const active = computed(() => settingStore.nav.lab || 'crypto');
+const active = computed(() => storeSetting.nav.lab || 'crypto');
 const componentNav = computed(() => [
   { id: 'crypto', name: t('pages.lab.crypto.title') },
   { id: 'diff', name: t('pages.lab.diff.title') },
@@ -44,7 +44,7 @@ const componentNav = computed(() => [
 ]);
 
 const onNavChange = (item: string) => {
-  settingStore.updateConfig({ nav: { ...settingStore.nav, lab: item } });
+  storeSetting.updateConfig({ nav: { ...storeSetting.nav, lab: item } });
 
   if (Object.hasOwn(componentMap, item)) {
     currentComponent.value = componentMap[item];

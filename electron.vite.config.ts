@@ -12,6 +12,7 @@ import viteVueDevTools from 'vite-plugin-vue-devtools';
 import viteSvgLoader from 'vite-svg-loader';
 
 import pkg from './package.json';
+import { buildProxyBootstrapPlugin } from './scripts/buildProxyBootstrapPlugin';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -26,7 +27,14 @@ const visualizerPlugin = (type: 'renderer' | 'main') => {
  */
 export default defineConfig({
   main: {
-    plugins: [...visualizerPlugin('main')],
+    plugins: [
+      ...visualizerPlugin('main'),
+      buildProxyBootstrapPlugin({
+        dependencies: Object.keys(pkg.dependencies),
+        isProd,
+        rootDir: __dirname,
+      }),
+    ],
     resolve: {
       alias: {
         '@main': resolve('src/main'),
@@ -129,7 +137,7 @@ export default defineConfig({
         ],
       }),
       viteSvgLoader(),
-      viteVueDevTools(),
+      ...(isDev ? [viteVueDevTools()] : []),
       ...visualizerPlugin('renderer'),
     ],
     resolve: {

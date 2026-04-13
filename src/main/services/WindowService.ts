@@ -3,17 +3,24 @@ import { join } from 'node:path';
 import { loggerService } from '@logger';
 import { appLocale } from '@main/services/AppLocale';
 import { configManager } from '@main/services/ConfigManager';
-import { APP_DATABASE_PATH, APP_FILE_PATH } from '@main/utils/path';
+import { handleProtocolUrl } from '@main/services/ProtocolClient';
+import { APP_DATABASE_PATH } from '@main/utils/path';
 import { isDev, isLinux, isMacOS, isMacOSTahoe, isPackaged, isWindows, isWindows22H2 } from '@main/utils/systeminfo';
-import { titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
+import { APP_NAME_PROTOCOL, titleBarOverlayDark, titleBarOverlayLight } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
 import type { ISize } from '@shared/config/window';
 import { WINDOW_NAME, WINDOW_SIZE } from '@shared/config/window';
 import { convertUriToStandard, ELECTRON_TAG, isLocalhostURI, UNSAFE_HEADERS } from '@shared/modules/headers';
-import { isPositiveFiniteNumber, isUndefined } from '@shared/modules/validate';
+import {
+  isHttp,
+  isPositiveFiniteNumber,
+  isSecurityScheme,
+  isSystemScheme,
+  isUndefined,
+} from '@shared/modules/validate';
 import type { BrowserWindowConstructorOptions } from 'electron';
-import { app, BrowserWindow, ipcMain, nativeImage, nativeTheme, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, nativeTheme, screen, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { merge } from 'es-toolkit';
 
@@ -193,7 +200,6 @@ export class WindowService {
       mainWindow.setFullScreen(false);
     }
 
-    mainWindow.webContents.setAudioMuted(false);
     mainWindow.show();
     mainWindow.focus();
 
@@ -214,9 +220,7 @@ export class WindowService {
       return;
     }
 
-    mainWindow.webContents.setAudioMuted(true);
-
-    // [macOs/Windows] hacky fix
+    // [macOS/Windows] hacky fix
     // previous window(not self-app) should be focused again after miniWindow hide
     // this workaround is to make previous window focused again after miniWindow hide
     if (isWindows) {
@@ -225,7 +229,7 @@ export class WindowService {
       return;
     } else if (isMacOS) {
       mainWindow.hide();
-      app.hide();
+      // app.hide();
       return;
     }
 
@@ -299,6 +303,32 @@ export class WindowService {
     windows.forEach((win) => this.reloadWindow(win, force));
   }
 
+  private mouseTracker(mainWindow: BrowserWindow, interval = 100) {
+    let wasInside = false;
+
+    const timer = setInterval(() => {
+      if (mainWindow.isDestroyed()) {
+        clearInterval(timer);
+        return;
+      }
+
+      const cursor = screen.getCursorScreenPoint();
+      const bounds = mainWindow.getBounds();
+      const isInside =
+        cursor.x >= bounds.x &&
+        cursor.x <= bounds.x + bounds.width &&
+        cursor.y >= bounds.y &&
+        cursor.y <= bounds.y + bounds.height;
+
+      if (isInside !== wasInside) {
+        mainWindow.webContents.send(IPC_CHANNEL.MEDIA_BROWSE, !isInside);
+        wasInside = isInside;
+      }
+    }, interval);
+
+    return () => clearInterval(timer);
+  }
+
   private safeClose(mainWindow: BrowserWindow) {
     const finish = () => {
       ipcMain.removeListener(IPC_CHANNEL.WINDOW_DESTROY_RELAY, onAck);
@@ -322,7 +352,7 @@ export class WindowService {
       const currentTime = Date.now();
       const mainWindowName = this.getWindowName(mainWindow)!;
       const lastCrashTime = this.winPool.get(mainWindowName)?.lastCrashTime || 0;
-      this.winPool.set(mainWindowName, { window: mainWindow, lastCrashTime });
+      this.winPool.set(mainWindowName, { window: mainWindow, lastCrashTime: currentTime });
       if (currentTime - lastCrashTime > 60 * 1000) {
         // If greater than 1 minute, restart the rendering process
         mainWindow.webContents.reload();
@@ -353,7 +383,7 @@ export class WindowService {
       mainWindow.webContents.setZoomFactor(configManager.zoom);
 
       // [mac]hacky-fix: miniWindow set visibleOnFullScreen:true will cause dock icon disappeared
-      app.dock?.show();
+      // app.dock?.show();
       mainWindow.show();
     });
 
@@ -408,33 +438,23 @@ export class WindowService {
       }
 
       event.preventDefault();
-      shell.openExternal(url);
+      if (isSecurityScheme(url)) {
+        shell.openExternal(url);
+      } else {
+        logger.warn(`Blocked navigation to untrusted URL scheme: ${url}`);
+      }
     });
 
     mainWindow.webContents.setWindowOpenHandler((details) => {
       const { url } = details;
 
-      const oauthProviderUrls = ['github.com', 'catni.cn', 'pagespy.org'];
-
-      if (oauthProviderUrls.some((link) => url.includes(link))) {
-        return {
-          action: 'allow',
-          overrideBrowserWindowOptions: {
-            webPreferences: {
-              partition: 'persist:webview',
-            },
-          },
-        };
-      }
-
-      if (url.includes('http://file/')) {
-        const fileName = url.replace('http://file/', '');
-        const filePath = `${APP_FILE_PATH}/${fileName}`;
-        shell.openPath(filePath).catch((error) => logger.error('Failed to open file:', error));
-      } else {
-        // mainWindow.webContents.send(IPC_CHANNEL.URI_BLOCKED, url);
-        // shell.openExternal(details.url);
-
+      if (isSystemScheme(url)) {
+        shell.openExternal(url).catch((err) => {
+          logger.error(`Failed to open external URL: ${url}`, err as Error);
+        });
+      } else if (url.startsWith(APP_NAME_PROTOCOL)) {
+        handleProtocolUrl(url);
+      } else if (isHttp(details.url)) {
         let window = this.getWindow(WINDOW_NAME.BROWSER);
         if (window && !window.isDestroyed()) {
           this.showWindow(window);
@@ -447,6 +467,8 @@ export class WindowService {
             }, 1000);
           });
         }
+      } else {
+        logger.warn(`Blocked shell.openExternal for untrusted URL scheme: ${url}`);
       }
 
       return { action: 'deny' };
@@ -766,11 +788,14 @@ export class WindowService {
       }
     });
 
+    this.mouseTracker(mainWindow);
+
     if (!isPackaged && process.env.ELECTRON_RENDERER_URL) {
       mainWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}/#/player`);
     } else {
       mainWindow.loadFile(join(import.meta.dirname, '../renderer/index.html'), { hash: 'player' });
     }
+
     return mainWindow;
   }
 
@@ -848,7 +873,7 @@ export class WindowService {
         mainWindow.webContents.setZoomFactor(configManager.zoom);
 
         // [mac]hacky-fix: miniWindow set visibleOnFullScreen:true will cause dock icon disappeared
-        app.dock?.show();
+        // app.dock?.show();
         mainWindow.show();
       });
     }

@@ -420,6 +420,7 @@ const codeEditConf = ref<IEditorOptions['normal']>({
 });
 const htmlEditConf = ref<IEditorOptions['normal']>({ ...EDIT_CONF, language: 'html' });
 const termConf = ref<ITerminalOptions>({
+  allowProposedApi: true,
   convertEol: true,
   cursorBlink: false,
   cursorStyle: 'block',

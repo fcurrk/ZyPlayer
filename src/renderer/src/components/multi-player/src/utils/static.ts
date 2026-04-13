@@ -29,10 +29,10 @@ const color = {
 };
 
 const language = () => {
-  const settingStore = useSettingStore();
+  const storeSetting = useSettingStore();
   const DEFAULT_LANGUAGE = 'en_US';
 
-  const getStoredLanguage = settingStore.displayLang;
+  const getStoredLanguage = storeSetting.displayLang;
 
   const lang = getStoredLanguage || DEFAULT_LANGUAGE;
   return lang;

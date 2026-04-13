@@ -50,11 +50,10 @@ class T3DrpyAdapter {
         const { type, level, msg } = payload;
 
         if (type === 'log') {
-          const msgType = msg?.type;
+          // const msgType = msg.type;
           const msgList = msg?.msg ?? [];
 
-          const log =
-            msgType === 'single' ? msgList[0] : msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
+          const log = msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
 
           logger[level](log);
         }
@@ -208,8 +207,11 @@ class T3DrpyAdapter {
     const scriptObj = qs ? Object.fromEntries(new URLSearchParams(qs)) : {};
 
     const res = {
-      url: resp?.url || '',
-      quality: resp.quality || [],
+      url: (Array.isArray(resp?.url) && resp.url.length > 0 ? resp.url?.[1] : resp?.url) || '',
+      quality:
+        Array.isArray(resp?.url) && resp.url.length > 0
+          ? resp.url.flatMap((name, i, arr) => (i % 2 === 0 && arr[i + 1] ? [{ name, url: arr[i + 1] }] : []))
+          : [],
       parse: resp.parse || 0,
       jx: resp.jx || 0,
       headers: resp?.header || resp?.headers || {},

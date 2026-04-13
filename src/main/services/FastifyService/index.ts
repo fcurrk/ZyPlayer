@@ -1,20 +1,20 @@
-import type { FastifyCorsOptions } from '@fastify/cors';
+import type { Buffer } from 'node:buffer';
+import { Writable } from 'node:stream';
+
 import fastifyCors from '@fastify/cors';
 import fastifyMultipart from '@fastify/multipart';
-import type { SwaggerOptions as FastifySwaggerOptions } from '@fastify/swagger';
 import fastifySwagger from '@fastify/swagger';
-import type { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { loggerService } from '@logger';
 import { configManager } from '@main/services/ConfigManager';
 import { Schema } from '@main/types/server';
 import { isDev } from '@main/utils/systeminfo';
-import { APP_DESC, APP_NAME, APP_VERSION } from '@shared/config/appinfo';
+import { APP_NAME, APP_VERSION } from '@shared/config/appinfo';
 import { PORT } from '@shared/config/env';
 import { LOG_MODULE } from '@shared/config/logger';
 import { CacheService } from '@shared/modules/cache';
-import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
+import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fastify from 'fastify';
 import StatusCodes from 'http-status-codes';
 import qs from 'qs';
@@ -45,17 +45,6 @@ export class FastifyService {
 
     try {
       this.server = fastify({
-        logger: false,
-        routerOptions: {
-          ignoreTrailingSlash: true,
-          maxParamLength: 1024 * 10,
-          querystringParser: (str: string) => qs.parse(str),
-        },
-        forceCloseConnections: true,
-        bodyLimit: 1024 * 1024 * 3,
-        trustProxy: true,
-        requestTimeout: 60_000,
-        connectionTimeout: 65_000,
         ajv: {
           customOptions: {
             allErrors: true,
@@ -64,9 +53,23 @@ export class FastifyService {
             // useDefaults: true,
           },
         },
+        bodyLimit: 1024 * 1024 * 3,
+        connectionTimeout: 65_000,
+        disableRequestLogging: true,
+        forceCloseConnections: true,
+        logger: {
+          level: isDev || configManager.debug ? 'debug' : 'info',
+          stream: this.createLogStream(),
+        },
+        requestTimeout: 60_000,
+        routerOptions: {
+          ignoreTrailingSlash: true,
+          maxParamLength: 1024 * 10,
+          querystringParser: (str: string) => qs.parse(str),
+        },
+        trustProxy: true,
       }); // Initialize Fastify server
       this.server.withTypeProvider<TypeBoxTypeProvider>(); // Set TypeBox as the default type provider
-      this.server.log = this.customLogger(); // Set custom logger
 
       this.registerHandlers(); // Register handlers
       this.registerHooks(); // Register hooks
@@ -116,19 +119,28 @@ export class FastifyService {
   }
 
   private async registerHandlers(): Promise<void> {
-    this.server!.setErrorHandler((error: Error, _request, reply) => {
-      logger.error(`Fastify Service Uncaught Exception: ${error.message}`);
+    this.server!.setErrorHandler((error: FastifyError, req: FastifyRequest, reply: FastifyReply) => {
+      req.log.error(`Fastify Service Uncaught Exception: ${error.message}`);
 
-      reply
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send({ code: -1, msg: `Internal Server Error - ${error.name}`, data: error.message });
+      const statusCode = error.statusCode ?? 500;
+
+      return reply.status(statusCode >= 500 ? StatusCodes.INTERNAL_SERVER_ERROR : StatusCodes.BAD_REQUEST).send({
+        code: -1,
+        msg: statusCode >= 500 && isDev ? 'Internal Server Error' : error.message,
+        data: error.validation,
+      });
     });
   }
 
   private async registerHooks(): Promise<void> {
-    this.server!.addHook('onTimeout', async (req, reply) => {
-      logger.warn(`Fastify Response Timeout: ${req.url}`);
-      reply.status(StatusCodes.REQUEST_TIMEOUT).send({ code: -1, msg: 'Request Timeout', data: null });
+    this.server!.addHook('onTimeout', async (req: FastifyRequest, reply: FastifyReply) => {
+      req.log.warn(`Fastify Response Timeout: ${req.url}`);
+
+      return reply.status(StatusCodes.REQUEST_TIMEOUT).send({
+        code: -1,
+        msg: 'Request Timeout',
+        data: null,
+      });
     });
   }
 
@@ -137,7 +149,7 @@ export class FastifyService {
     await this.server!.register(fastifyCors, {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       origin: '*',
-    } as FastifyCorsOptions);
+    });
 
     // Register multipart
     await this.server!.register(fastifyMultipart);
@@ -149,9 +161,11 @@ export class FastifyService {
     if (isDev || configManager.debug) {
       await this.server!.register(fastifySwagger, {
         openapi: {
+          openapi: '3.1.0',
           info: {
-            title: `${APP_NAME} - openapi`,
-            description: APP_DESC,
+            title: `${APP_NAME} api`,
+            description: 'The Swagger API documentation for the project',
+
             version: APP_VERSION,
             license: {
               name: 'License',
@@ -162,19 +176,23 @@ export class FastifyService {
             url: 'https://swagger.io',
             description: 'Find out more about Swagger',
           },
+          servers: [
+            {
+              url: 'http://127.0.0.1:9978',
+              description: 'Development server',
+            },
+          ],
         },
-      } as FastifySwaggerOptions);
+      });
+
       await this.server!.register(fastifySwaggerUi, {
         routePrefix: '/docs',
         uiConfig: {
           docExpansion: 'list',
-          deepLinking: false,
-          tryItOutEnabled: true,
-          layout: 'BaseLayout',
+          deepLinking: true,
+          filter: true,
         },
-        staticCSP: true,
-        transformSpecificationClone: true,
-      } as FastifySwaggerUiOptions);
+      });
     }
   }
 
@@ -197,18 +215,35 @@ export class FastifyService {
     }
   }
 
-  private customLogger(): FastifyBaseLogger {
-    return {
-      info: (o: any, ...n: any[]) => logger.info(o, ...(n as any)),
-      debug: (o: any, ...n: any[]) => logger.debug(o, ...(n as any)),
-      warn: (o: any, ...n: any[]) => logger.warn(o, ...(n as any)),
-      error: (o: any, ...n: any[]) => logger.error(o, ...(n as any)),
-      fatal: (o: any, ...n: any[]) => logger.error(o, ...(n as any)),
-      trace: (o: any, ...n: any[]) => logger.debug(o, ...(n as any)),
-      silent: () => {},
-      child: () => this.customLogger(),
-      level: 'info',
-    };
+  private createLogStream(): Writable {
+    return new Writable({
+      write: (chunk: Buffer, _encoding, callback) => {
+        try {
+          const logData = JSON.parse(chunk.toString());
+
+          // Pino: trace=10, debug=20, info=30, warn=40, error=50, fatal=60
+          const level = logData.level as number;
+          const message = logData.msg || '';
+
+          if (level >= 50) {
+            logger.error(message);
+          } else if (level >= 40) {
+            logger.warn(message);
+          } else if (level >= 30) {
+            logger.info(message);
+          } else if (level >= 20) {
+            logger.debug(message);
+          } else if (level >= 10) {
+            logger.silly(message);
+          } else {
+            logger.debug(message);
+          }
+        } catch {
+          logger.debug(chunk.toString());
+        }
+        callback();
+      },
+    });
   }
 }
 

@@ -8,11 +8,21 @@ export enum REC_HOT_TYPE {
   BAIDU = 'baidu',
   DOUBAN = 'douban',
   ENLIGHTENT = 'enlightent',
+  HISENSE = 'hisense',
   KOMECT = 'komect',
   KYLIVE = 'kylive',
   QUARK = 'quark',
 }
 export type IRecHotType = `${REC_HOT_TYPE}`;
+
+export enum REC_ASSOCIATION_TYPE {
+  DOUBAN = 'douban',
+  HISENSE = 'hisense',
+  // KOMECT = 'komect',
+  IQIYI = 'iqiyi',
+  SNM = 'snm',
+}
+export type IRecAssociationType = `${REC_ASSOCIATION_TYPE}`;
 
 export enum PLAYER_TYPE {
   XGPLAYER = 'xgplayer',

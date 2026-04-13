@@ -171,6 +171,14 @@ export function fetchRecHot(doc) {
   });
 }
 
+export function fetchRecAssociation(doc) {
+  return request.request({
+    url: '/v1/film/rec/association',
+    method: 'get',
+    params: doc,
+  });
+}
+
 export function fetchRecMatch(doc) {
   return request.request({
     url: '/v1/film/rec/match',

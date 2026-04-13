@@ -154,7 +154,7 @@ import { APP_NAME } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { WINDOW_NAME } from '@shared/config/window';
 import { generateStrUUID } from '@shared/modules/crypto';
-import { isExternal } from '@shared/modules/validate';
+import { isSecurityScheme } from '@shared/modules/validate';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -201,7 +201,7 @@ const setup = () => {
   if (active.value) {
     nextTick(() => {
       const item = browserStore.getDetail(active.value);
-      if (item?.url) handleWebviewNavigator(item.url);
+      if (item?.url) handleWebviewNavigator(item.url, item.headers);
     });
   }
 };
@@ -218,13 +218,14 @@ const onWindowDestroy = () => {
   window.electron.ipcRenderer.send(IPC_CHANNEL.WINDOW_DESTROY_RELAY);
 };
 
-const onBrowserNavigate = (_: Electron.IpcRendererEvent, url: string) => {
+const onBrowserNavigate = (_: Electron.IpcRendererEvent, url: string, headers?: Record<string, any>) => {
   const id = generateStrUUID(url);
   handleTabNew({
     id,
     favicon: '',
     title: `${t('pages.browser.tab.newTab')} ${id.slice(0, 4)}`,
     url,
+    headers,
   });
 };
 
@@ -241,9 +242,9 @@ const handleWebviewRouter = (type: 'back' | 'forward' | 'refresh') => {
   if (type === 'refresh') wv.reload();
 };
 
-const handleWebviewNavigator = (url: string) => {
+const handleWebviewNavigator = (url: string, headers?: Record<string, any>) => {
   appid.value = `browser_${generateStrUUID(url)}`;
-  nextTick(() => webviewRef.value?.loadUrl(url));
+  nextTick(() => webviewRef.value?.loadUrl(url, headers));
 };
 
 const handleTabClick = (item: IBrowserItem) => {
@@ -251,7 +252,7 @@ const handleTabClick = (item: IBrowserItem) => {
 
   browserStore.activeTab = item.id;
 
-  handleWebviewNavigator(item.url);
+  handleWebviewNavigator(item.url, item.headers);
 };
 
 const handleTabClose = (id: string) => {
@@ -270,7 +271,7 @@ const handleTabClose = (id: string) => {
 
   if (isActive) {
     browserStore.activeTab = next?.id ?? '';
-    handleWebviewNavigator(next?.url ?? 'about:blank');
+    handleWebviewNavigator(next?.url ?? 'about:blank', next?.headers);
   }
 };
 
@@ -283,7 +284,7 @@ const handleTabNew = (doc: IBrowserItem) => {
   browserStore.open(doc);
   browserStore.activeTab = doc.id;
 
-  handleWebviewNavigator(doc.url);
+  handleWebviewNavigator(doc.url, doc.headers);
 };
 
 /** more */
@@ -294,7 +295,7 @@ const handleMoreDrawer = () => {
 
 const handleMoreOpenSystemBrowser = () => {
   const url = webviewRef.value?.getURL();
-  if (isExternal(url)) {
+  if (isSecurityScheme(url)) {
     window.electron.ipcRenderer.invoke(IPC_CHANNEL.OPEN_WEBSITE, url);
   } else {
     MessagePlugin.warning(t('pages.browser.message.noSupportProtocol'));

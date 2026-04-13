@@ -1,4 +1,4 @@
-import { md, pki } from 'node-forge';
+import forge from 'node-forge';
 
 import type { RsaOptions } from '../../type';
 import { arrayToBytes as forgeArrayToBytes, stringify as forgeStringify } from '../../utils/forge';
@@ -8,7 +8,7 @@ const PUB_REGEX = /^-----BEGIN PUBLIC KEY-----[\s\S]+?-----END PUBLIC KEY-----[\
 const PRI_REGEX =
   /^-----BEGIN (?:RSA |ENCRYPTED )?PRIVATE KEY-----[\s\S]+?-----END (?:RSA |ENCRYPTED )?PRIVATE KEY-----[\s\S]*$/;
 
-const getPad = (pad: string): pki.rsa.EncryptionScheme => {
+const getPad = (pad: string): forge.pki.rsa.EncryptionScheme => {
   switch (pad.toLowerCase()) {
     case 'rsa-oaep':
     case 'rsa-oaep-sha1':
@@ -79,11 +79,11 @@ export const rsa = {
     if (!['base64', 'hex'].includes(outputEncode.toLowerCase())) return '';
     if (!src || !key) return '';
 
-    let rsaKey: pki.rsa.PublicKey | pki.rsa.PrivateKey;
+    let rsaKey: forge.pki.rsa.PublicKey | forge.pki.rsa.PrivateKey;
     if (type === 0) {
       if (!PUB_REGEX.test(key)) throw new Error('Key is not a valid public key');
 
-      rsaKey = pki.publicKeyFromPem(key);
+      rsaKey = forge.pki.publicKeyFromPem(key);
     } else if (type === 1) {
       if (!PRI_REGEX.test(key)) throw new Error('Key is not a valid private key');
 
@@ -91,12 +91,12 @@ export const rsa = {
         if (!passphrase) throw new Error('Passphrase is required for encrypted private key');
 
         const passphraseBuffer = wordArrayParse[passphraseEncode](passphrase);
-        rsaKey = pki.decryptRsaPrivateKey(
+        rsaKey = forge.pki.decryptRsaPrivateKey(
           key,
           forgeArrayToBytes(wordArrayToArray(passphraseBuffer) as unknown as ArrayBuffer).getBytes(),
         );
       } else {
-        rsaKey = pki.privateKeyFromPem(key);
+        rsaKey = forge.pki.privateKeyFromPem(key);
       }
     }
 
@@ -111,9 +111,9 @@ export const rsa = {
       }
 
       schemeOptions = {
-        md: (md[algorithm as keyof typeof md] as { create: () => any }).create(),
+        md: (forge.md[algorithm as keyof typeof forge.md] as { create: () => any }).create(),
         mgf1: {
-          md: (md[algorithm as keyof typeof md] as { create: () => any }).create(),
+          md: (forge.md[algorithm as keyof typeof forge.md] as { create: () => any }).create(),
         },
       };
     }
@@ -231,11 +231,11 @@ export const rsa = {
     if (!['base64', 'hex'].includes(inputEncode.toLowerCase())) return '';
     if (!src || !key) return '';
 
-    let rsaKey: pki.rsa.PublicKey | pki.rsa.PrivateKey;
+    let rsaKey: forge.pki.rsa.PublicKey | forge.pki.rsa.PrivateKey;
     if (type === 0) {
       if (!PUB_REGEX.test(key)) throw new Error('Key is not a valid public key');
 
-      rsaKey = pki.publicKeyFromPem(key);
+      rsaKey = forge.pki.publicKeyFromPem(key);
     } else if (type === 1) {
       if (!PRI_REGEX.test(key)) throw new Error('Key is not a valid private key');
 
@@ -243,12 +243,12 @@ export const rsa = {
         if (!passphrase) throw new Error('Passphrase is required for encrypted private key');
 
         const passphraseBuffer = wordArrayParse[passphraseEncode](passphrase);
-        rsaKey = pki.decryptRsaPrivateKey(
+        rsaKey = forge.pki.decryptRsaPrivateKey(
           key,
           forgeArrayToBytes(wordArrayToArray(passphraseBuffer) as unknown as ArrayBuffer).getBytes(),
         );
       } else {
-        rsaKey = pki.privateKeyFromPem(key);
+        rsaKey = forge.pki.privateKeyFromPem(key);
       }
     }
 
@@ -263,9 +263,9 @@ export const rsa = {
       }
 
       schemeOptions = {
-        md: (md[algorithm as keyof typeof md] as { create: () => any }).create(),
+        md: (forge.md[algorithm as keyof typeof forge.md] as { create: () => any }).create(),
         mgf1: {
-          md: (md[algorithm as keyof typeof md] as { create: () => any }).create(),
+          md: (forge.md[algorithm as keyof typeof forge.md] as { create: () => any }).create(),
         },
       };
     }

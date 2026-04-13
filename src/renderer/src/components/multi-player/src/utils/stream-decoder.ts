@@ -6,7 +6,7 @@ import * as magnet from 'magnet-uri';
 import Mpegtsjs from 'mpegts.js';
 
 // import Shakajs from 'shaka-player/dist/shaka-player.compiled';
-import WebTorrentjs from '../modules/webtorrent.min.js';
+import WebTorrentjs from '../assets/decoder/webtorrent.min.js';
 import type {
   IDashConfig,
   IDashInstance,

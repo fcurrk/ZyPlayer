@@ -1,7 +1,9 @@
 import { loggerService } from '@logger';
+import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
 import type { IShortcutConfig, IShortcutType } from '@shared/config/shortcut';
 import { SHORTCUT_TYPE } from '@shared/config/shortcut';
+import { WINDOW_NAME } from '@shared/config/window';
 import { isFunction, isNil, isStrEmpty, isString } from '@shared/modules/validate';
 import { globalShortcut } from 'electron';
 import * as localShortcut from 'electron-localshortcut';
@@ -32,7 +34,20 @@ export class ShortcutService {
   }
 
   private shortcutHandler = {
-    bossKey: () => windowService.toggleAllWindows(),
+    bossKey: () => {
+      const windows = windowService.getAllWindows();
+      const isVisable = windows.some((win) => win.isVisible());
+
+      const playerWindow = windowService.getWindow(WINDOW_NAME.PLAYER);
+      if (playerWindow && !playerWindow.isDestroyed()) {
+        playerWindow.webContents.send(IPC_CHANNEL.MEDIA_PAUSE, isVisable);
+      }
+
+      windows.forEach((mainWindow) => {
+        isVisable ? windowService.hideWindow(mainWindow) : windowService.showWindow(mainWindow);
+        mainWindow.webContents.setAudioMuted(isVisable);
+      });
+    },
   };
 
   // convert the shortcut recorded by JS keyboard event key value to electron global shortcut format

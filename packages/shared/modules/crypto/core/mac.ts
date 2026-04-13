@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { hmac as forgeHmac, md as forgeMd } from 'node-forge';
+import forge from 'node-forge';
 import * as SmCrypto from 'sm-crypto-v2';
 
 import type { HashOptions, HmacOptions } from '../type';
@@ -135,7 +135,7 @@ export const hash = {
     const { src, inputEncode = 'utf8', outputEncode = 'hex' } = options;
     if (!['base64', 'hex'].includes(outputEncode.toLowerCase())) return '';
     const srcBuffer = wordParse[inputEncode](src);
-    const cipherBuffer = forgeMd['sha512/224']
+    const cipherBuffer = forge.md['sha512/224']
       .create()
       .update(forgeArrayToBytes(wordArrayToArray(srcBuffer) as unknown as ArrayBuffer).getBytes())
       .digest();
@@ -152,7 +152,7 @@ export const hash = {
     const { src, inputEncode = 'utf8', outputEncode = 'hex' } = options;
     if (!['base64', 'hex'].includes(outputEncode.toLowerCase())) return '';
     const srcBuffer = wordParse[inputEncode](src);
-    const cipherBuffer = forgeMd['sha512/256']
+    const cipherBuffer = forge.md['sha512/256']
       .create()
       .update(forgeArrayToBytes(wordArrayToArray(srcBuffer) as unknown as ArrayBuffer).getBytes())
       .digest();
@@ -285,7 +285,7 @@ export const hmac = {
     if (!['base64', 'hex'].includes(outputEncode.toLowerCase())) return '';
     const srcBuffer = wordParse[inputEncode](src);
     const keyBuffer = wordParse[keyEncode](key);
-    const hmac = forgeHmac.create();
+    const hmac = forge.hmac.create();
     hmac.start('sha512/224', forgeArrayToBytes(wordArrayToArray(keyBuffer) as unknown as ArrayBuffer).getBytes());
     hmac.update(forgeArrayToBytes(wordArrayToArray(srcBuffer) as unknown as ArrayBuffer).getBytes());
     const cipherBuffer = hmac.digest();
@@ -303,7 +303,7 @@ export const hmac = {
     if (!['base64', 'hex'].includes(outputEncode.toLowerCase())) return '';
     const srcBuffer = wordParse[inputEncode](src);
     const keyBuffer = wordParse[keyEncode](key);
-    const hmac = forgeHmac.create();
+    const hmac = forge.hmac.create();
     hmac.start('sha512/256', forgeArrayToBytes(wordArrayToArray(keyBuffer) as unknown as ArrayBuffer).getBytes());
     hmac.update(forgeArrayToBytes(wordArrayToArray(srcBuffer) as unknown as ArrayBuffer).getBytes());
     const cipherBuffer = hmac.digest();

@@ -18,12 +18,12 @@ import { ref, watch } from 'vue';
 
 import { useSettingStore } from '@/store';
 
-const settingStore = useSettingStore();
+const storeSetting = useSettingStore();
 
 const mdContent = ref(props.text);
 const mdOptions = ref({
   themeSettings: {
-    codeBlockTheme: settingStore.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK,
+    codeBlockTheme: storeSetting.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK,
   },
 });
 
@@ -32,10 +32,10 @@ watch(
   (val) => (mdContent.value = val),
 );
 watch(
-  () => settingStore.displayTheme,
+  () => storeSetting.displayTheme,
   () =>
     (mdOptions.value.themeSettings.codeBlockTheme =
-      settingStore.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK),
+      storeSetting.displayTheme === THEME.LIGHT ? THEME.LIGHT : THEME.DARK),
 );
 </script>
 <style lang="css" scoped></style>

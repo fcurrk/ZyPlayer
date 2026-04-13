@@ -198,7 +198,6 @@ class T4DrpyJs0Adapter {
 
     const res = {
       url: parsedUrl,
-      quality: [],
       parse,
       jx,
       headers: {},

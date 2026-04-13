@@ -141,8 +141,8 @@ export interface ICmsSearch {
 }
 
 export interface ICmsPlay {
-  url: string;
-  quality?: Array<string | number>;
+  url: string | Array<string>;
+  quality?: Array<{ name: string; url: string }>;
   jx?: number;
   parse?: number;
   headers?: Record<string, any>;
@@ -241,6 +241,7 @@ export interface ICmsActionHelp extends ICmsActionCommon {
 export interface ICmsActionBrowser extends ICmsActionCommon {
   type: typeof CMS_ACTION_TYPE.BROWSER | typeof CMS_ACTION_TYPE.WEBVIEW;
   url: string;
+  header?: Record<string, any>;
   browserHeight?: number;
   browserWidth?: number;
 }

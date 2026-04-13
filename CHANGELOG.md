@@ -2,12 +2,26 @@
 
 > All notable changes to this project will be documented in this file.
 
-## 3.4.4
+## 3.4.4 (2026-04-11)
 
-- 优化: mac/window侧边栏配色
+- 特性: 支持搜索联想(豆瓣/海信/喜粤TV)
+- 特性: 热搜支持海信, 修复云合, 剔除百度/夸克
+- 特性: 支持login事件(basic-auth)
+- 特性: scheme支持zy://sub?lang={{lang}}&name={{name}}&url={{url}}
+- 特性: 播放页隐身模式(鼠标移入播放, 移出暂停并隐藏窗口)
 - 修复: windows x64平台调用npminstall失败
+- 修复: 窗口崩溃时间存储错误
+- 修复: T3Drpy和T3Catopen适配器同步方法postType为form请求错误; T0Xml和T1Json适配器处理playUrl获取链接错误
+- 修复: 同步请求内容非标准json格式化错误(json5替代); axios子进程请求支持代理; axios请求头返回不标准
+- 修复: 老板键触发缺未暂停视频播放
+- 修复: cms接口返回url数组时无法正确处理
+- 修复: 影视有源但为选择时无法触发全部搜索问题
+- 修复: webview组件 缺失请求头加载方法
 - 修复: 改进更新行为，防止意外自动更新
 - 修复: window部分情况关闭窗口导致整个应用程序崩溃; arm平台打包失败
+- 修复: 热榜接口id字段重复情况
+- 变动: 数据库字段(注意备份)
+- 变动: 用户协议(及时查看, 强制弹出)
 - 变动: 依赖库升级
 
 [View on GitHub](https://github.com/Hiram-Wong/ZyPlayer/releases/tag/v3.4.4)

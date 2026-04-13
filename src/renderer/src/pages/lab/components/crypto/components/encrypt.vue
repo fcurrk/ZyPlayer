@@ -27,7 +27,7 @@
               :autosize="{ minRows: 3, maxRows: 5 }"
               :placeholder="$t('common.placeholder.input')"
             />
-            <t-input-adornment v-else style="flex: 1">
+            <t-input-adornment v-else :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.keyEncode" auto-width>
                   <t-option v-for="item in ENCODE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
@@ -41,7 +41,7 @@
             :label="$t('pages.lab.crypto.encrypt.field.passphrase')"
             name="passphrase"
           >
-            <t-input-adornment style="flex: 1">
+            <t-input-adornment :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.passphraseEncode" auto-width>
                   <t-option v-for="item in ENCODE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
@@ -55,7 +55,7 @@
             :label="$t('pages.lab.crypto.encrypt.field.iv')"
             name="iv"
           >
-            <t-input-adornment style="flex: 1">
+            <t-input-adornment :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.ivEncode" auto-width>
                   <t-option v-for="item in ENCODE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
@@ -97,7 +97,7 @@
             :label="$t('pages.lab.crypto.encrypt.field.tag')"
             name="tag"
           >
-            <t-input-adornment style="flex: 1">
+            <t-input-adornment :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.tagEncode" auto-width>
                   <t-option v-for="item in ENCODE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />
@@ -111,7 +111,7 @@
             :label="$t('pages.lab.crypto.encrypt.field.aad')"
             name="aad"
           >
-            <t-input-adornment style="flex: 1">
+            <t-input-adornment :style="{ flex: 1 }">
               <template #prepend>
                 <t-select v-model="formData.aadEncode" auto-width>
                   <t-option v-for="item in ENCODE_OPTIONS" :key="item.value" :value="item.value" :label="item.label" />

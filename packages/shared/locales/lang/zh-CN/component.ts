@@ -1,6 +1,7 @@
 export default {
   action: {
     countdown: '{0}秒后关闭',
+    fullview: '全屏预览',
   },
   hot: {
     title: '热门搜索',
@@ -16,6 +17,7 @@ export default {
   },
   search: {
     title: '搜索',
+    association: '搜索联想',
     history: '搜索历史',
     placeholder: {
       input: '搜索全网资源',

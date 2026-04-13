@@ -1,4 +1,4 @@
-import type { IAigcProviderType, IPlayerType, IRecHotType, ISnifferType } from '../config/setting';
+import type { IAigcProviderType, IPlayerType, IRecAssociationType, IRecHotType, ISnifferType } from '../config/setting';
 import type { ITheme } from '../config/theme';
 import { USER_AGENT } from '../config/userAgent';
 import type { ILang } from '../locales';
@@ -10,6 +10,7 @@ export const settingList = [
   { key: 'lang', value: 'system' },
   { key: 'timeout', value: 10000 },
   { key: 'hot', value: 'kylive' },
+  { key: 'association', value: 'douban' },
   { key: 'defaultAnalyze', value: '' },
   { key: 'defaultIptv', value: '' },
   { key: 'defaultSite', value: '' },
@@ -85,6 +86,7 @@ export interface ISetting {
   lang: ILang;
   timeout: number;
   hot: IRecHotType;
+  association: IRecAssociationType;
   defaultAnalyze: string;
   defaultIptv: string;
   defaultSite: string;

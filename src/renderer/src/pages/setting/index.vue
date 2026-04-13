@@ -18,7 +18,7 @@ import CommonNav from '@/components/common-nav/index.vue';
 import { t } from '@/locales';
 import { useSettingStore } from '@/store';
 
-const settingStore = useSettingStore();
+const storeSetting = useSettingStore();
 
 const componentMap = {
   baseConfig: defineAsyncComponent(() => import('./components/base/index.vue')),
@@ -28,9 +28,9 @@ const componentMap = {
   parseSource: defineAsyncComponent(() => import('./components/parse/index.vue')),
 };
 
-const currentComponent = shallowRef(componentMap[settingStore.nav.setting || 'baseConfig']);
+const currentComponent = shallowRef(componentMap[storeSetting.nav.setting || 'baseConfig']);
 
-const active = computed(() => settingStore.nav.setting || 'baseConfig');
+const active = computed(() => storeSetting.nav.setting || 'baseConfig');
 const componentNav = computed(() => [
   { id: 'baseConfig', name: t('pages.setting.nav.baseConfig') },
   { id: 'dataManage', name: t('pages.setting.nav.dataManage') },
@@ -40,7 +40,7 @@ const componentNav = computed(() => [
 ]);
 
 const onNavChange = (item: string) => {
-  settingStore.updateConfig({ nav: { ...settingStore.nav, setting: item } });
+  storeSetting.updateConfig({ nav: { ...storeSetting.nav, setting: item } });
 
   if (Object.hasOwn(componentMap, item)) {
     currentComponent.value = componentMap[item];

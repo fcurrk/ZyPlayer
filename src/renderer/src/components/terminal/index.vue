@@ -33,10 +33,12 @@ import { toString } from '@shared/modules/toString';
 import { isJsonStr } from '@shared/modules/validate';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import type { ITerminalOptions } from '@xterm/xterm';
 import { Terminal } from '@xterm/xterm';
+import { throttle } from 'es-toolkit';
 import JSON5 from 'json5';
 import type { PropType } from 'vue';
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue';
@@ -56,11 +58,14 @@ const options = ref<ITerminalOptions>(props.options);
 const isSelecting = ref<boolean>(false);
 
 const term = ref<Terminal>();
-const fitAddon = ref<FitAddon>();
-const searchAddon = ref<SearchAddon>();
-const searchBarAddon = ref<SearchBarAddon>();
-const webLinksAddon = ref<WebLinksAddon>();
-const webglAddon = ref<WebglAddon>();
+const termAddon = ref<{
+  fit: FitAddon;
+  search: SearchAddon;
+  searchBar: SearchBarAddon;
+  weblinks: WebLinksAddon;
+  webgl: WebglAddon;
+  unicode: Unicode11Addon;
+}>();
 
 const resizeObserver = ref<ResizeObserver>();
 const visibleObserver = ref<IntersectionObserver>();
@@ -86,9 +91,11 @@ const setup = () => {
   nextTick(() => {
     const terminal = new Terminal(options.value);
 
+    // addon
     const fit = new FitAddon();
     const search = new SearchAddon();
     const searchBar = new SearchBarAddon({ searchAddon: search as any });
+    const unicode = new Unicode11Addon();
     const weblinks = new WebLinksAddon((event, uri) => {
       event.preventDefault();
 
@@ -102,12 +109,12 @@ const setup = () => {
     terminal.loadAddon(webgl);
     terminal.loadAddon(search);
     terminal.loadAddon(searchBar as any);
+    terminal.loadAddon(unicode);
+    terminal.unicode.activeVersion = '11';
 
     terminal.open(terminalRef.value!);
     terminal.focus();
     fit.fit();
-
-    terminalRef.value?.addEventListener('keydown', handleKeyDown, true);
 
     terminal.onKey((e: { key: string; domEvent: KeyboardEvent }) => {
       const ev = e.domEvent;
@@ -120,26 +127,21 @@ const setup = () => {
       isSelecting.value = terminal.hasSelection();
     });
 
-    resizeObserver.value = new ResizeObserver(() => {
-      if (term.value && fitAddon.value) fitAddon.value.fit();
-    });
+    terminalRef.value?.addEventListener('keydown', handleKeyDown, true);
+
+    // resize
+    const fitFn = throttle(() => fit.fit(), 100);
+    resizeObserver.value = new ResizeObserver(fitFn);
     resizeObserver.value.observe(terminalRef.value!);
 
     visibleObserver.value = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          fitAddon.value?.fit();
-        }
-      }
+      if (entries[0]?.isIntersecting) fit.fit();
     });
     visibleObserver.value.observe(terminalRef.value!);
 
+    // assign
     term.value = terminal;
-    fitAddon.value = fit;
-    searchAddon.value = search;
-    searchBarAddon.value = searchBar;
-    webLinksAddon.value = weblinks;
-    webglAddon.value = webgl;
+    termAddon.value = { fit, search, searchBar, unicode, weblinks, webgl };
   });
 };
 
@@ -188,33 +190,18 @@ const clear = () => {
 };
 
 const dispose = () => {
-  if (resizeObserver.value && terminalRef.value) {
-    resizeObserver.value.unobserve(terminalRef.value);
-    resizeObserver.value.disconnect();
-  }
-  if (visibleObserver.value && terminalRef.value) {
-    visibleObserver.value.unobserve(terminalRef.value);
-    visibleObserver.value.disconnect();
-  }
+  resizeObserver.value?.disconnect();
+  visibleObserver.value?.disconnect();
 
-  try {
-    fitAddon.value?.dispose();
-    searchAddon.value?.dispose();
-    searchBarAddon.value?.dispose();
-    webLinksAddon.value?.dispose();
-    webglAddon.value?.dispose();
-    term.value?.dispose();
-  } catch {}
+  if (termAddon.value) {
+    Object.values(termAddon.value).forEach((addon) => addon?.dispose?.());
+  }
+  term.value?.dispose();
 
   terminalRef.value?.removeEventListener('keydown', handleKeyDown, true);
 
-  fitAddon.value = undefined;
-  searchAddon.value = undefined;
-  searchBarAddon.value = undefined;
-  webLinksAddon.value = undefined;
-  webglAddon.value = undefined;
-
   term.value = undefined;
+  termAddon.value = undefined;
 
   resizeObserver.value = undefined;
   visibleObserver.value = undefined;
@@ -222,7 +209,7 @@ const dispose = () => {
 
 const focus = () => {
   term.value?.focus();
-  fitAddon.value?.fit();
+  termAddon.value?.fit?.fit();
 };
 
 const handleKeyDown = (ev: KeyboardEvent) => {
@@ -230,8 +217,12 @@ const handleKeyDown = (ev: KeyboardEvent) => {
 
   if ((isMacOS && ev.metaKey && key === 'f') || (!isMacOS && ev.ctrlKey && key === 'f')) {
     ev.preventDefault();
+    termAddon.value?.searchBar?.show();
+  }
 
-    searchBarAddon.value?.show();
+  if ((isMacOS && ev.metaKey && key === 'l') || (!isMacOS && ev.ctrlKey && key === 'l')) {
+    ev.preventDefault();
+    clear();
   }
 };
 

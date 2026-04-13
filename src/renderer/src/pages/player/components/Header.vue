@@ -9,9 +9,17 @@
       </div>
     </div>
     <div class="spacer system-functions">
-      <span class="txthide txthide1">{{ formData }}</span>
+      <span class="txthide txthide1">{{ titleFormData }}</span>
     </div>
     <div class="right system-functions">
+      <div class="system-function no-drag-region">
+        <t-button theme="default" shape="square" class="browse-button" @click="handleBrowse">
+          <template #icon>
+            <browse-icon v-if="browseFormData" />
+            <browse-off-icon v-else />
+          </template>
+        </t-button>
+      </div>
       <system-control class="system-function no-drag-region" />
     </div>
   </div>
@@ -19,7 +27,7 @@
 <script setup lang="ts">
 import { APP_NAME } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
-import { HomeIcon } from 'tdesign-icons-vue-next';
+import { BrowseIcon, BrowseOffIcon, HomeIcon } from 'tdesign-icons-vue-next';
 import { onMounted, ref, watch } from 'vue';
 
 import logoIcon from '@/assets/icon.png';
@@ -31,16 +39,27 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  browse: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const formData = ref(props.title);
+const emit = defineEmits(['browse']);
+
+const titleFormData = ref(props.title);
+const browseFormData = ref(props.browse);
 
 watch(
   () => props.title,
-  (val) => (formData.value = val),
+  (val) => (titleFormData.value = val),
 );
 watch(
-  () => formData.value,
+  () => props.browse,
+  (val) => (browseFormData.value = val),
+);
+watch(
+  () => titleFormData.value,
   () => setSystemMediaMetadata(),
 );
 
@@ -54,10 +73,15 @@ const handleBackMain = () => {
   window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_MAIN);
 };
 
+const handleBrowse = () => {
+  browseFormData.value = !browseFormData.value;
+  emit('browse', browseFormData.value);
+};
+
 const setSystemMediaMetadata = () => {
   if ('mediaSession' in navigator) {
     const doc = {
-      title: formData.value,
+      title: titleFormData.value,
       artist: APP_NAME,
       artwork: [{ src: logoIcon, sizes: '128x128', type: 'image/png' }],
     };

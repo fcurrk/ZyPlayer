@@ -1,6 +1,7 @@
 export default {
   action: {
     countdown: '{0}秒後關閉',
+    fullview: '全屏預覽',
   },
   hot: {
     title: '熱門搜索',
@@ -16,6 +17,7 @@ export default {
   },
   search: {
     title: '搜索',
+    association: '搜索聯想',
     history: '搜索歷史',
     placeholder: {
       input: '搜索全網資源',

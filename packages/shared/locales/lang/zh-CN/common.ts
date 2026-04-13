@@ -12,6 +12,8 @@ export default {
   reset: '重置',
   delete: '删除',
   save: '保存',
+  saveSuccess: '保存成功',
+  saveFail: '保存失败',
   close: '关闭',
   open: '打开',
   execute: '执行',
@@ -107,6 +109,9 @@ export default {
   connect: '连接',
   reconnect: '重连',
   adapter: '适配器',
+  auth: '认证',
+  username: '用户名',
+  password: '密码',
   request: {
     title: '请求',
     param: '请求参数',

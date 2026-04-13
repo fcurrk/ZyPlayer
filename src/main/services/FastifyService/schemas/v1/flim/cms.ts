@@ -234,7 +234,7 @@ export const getPlaySchema = {
     200: createHttpSuccessResponseSchema(
       Type.Object({
         url: Type.String(),
-        quality: Type.Optional(Type.Array(Type.Union([Type.String(), Type.Number()]))),
+        quality: Type.Optional(Type.Array(Type.Object({ name: Type.String(), url: Type.String() }))),
         jx: Type.Optional(Type.Integer({ format: 'int32' })),
         parse: Type.Optional(Type.Integer({ format: 'int32' })),
         headers: Type.Optional(Type.Record(Type.String(), Type.Any())),

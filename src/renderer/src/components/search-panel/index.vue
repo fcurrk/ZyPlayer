@@ -24,9 +24,9 @@
             class="search-select"
             @click.stop
           >
-            <t-option key="site" :label="$t('pages.setting.base.site.searchMap.local')" value="site" />
-            <t-option key="group" :label="$t('pages.setting.base.site.searchMap.group')" value="group" />
-            <t-option key="all" :label="$t('pages.setting.base.site.searchMap.all')" value="all" />
+            <t-option key="site" :label="$t('pages.setting.base.site.search.local')" value="site" />
+            <t-option key="group" :label="$t('pages.setting.base.site.search.group')" value="group" />
+            <t-option key="all" :label="$t('pages.setting.base.site.search.all')" value="all" />
           </t-select>
         </template>
         <template #suffix>
@@ -44,56 +44,82 @@
 
       <template #content>
         <div v-if="(isSearchableRoute && historyList.length > 0) || isHotableRoute" class="search-recommend">
-          <div v-show="isSearchableRoute && historyList.length > 0" class="search-recommend-top">
-            <div class="search-textlist">
-              <div class="search-textlist-title">{{ $t('component.search.history') }}</div>
-              <div class="search-textlist-items">
-                <div
-                  v-for="(item, index) in historyList"
-                  :key="index"
-                  class="search-textlist-item txthide txthide1"
-                  @click="handleSearch(item.videoName)"
-                >
-                  {{ item.videoName }}
-                </div>
+          <div v-show="searchValue.length > 0" class="search-recommend-top">
+            <div class="search-association">
+              <div class="search-association-title">{{ $t('component.search.association') }}</div>
+              <div class="search-association-content" :style="{ width: '100%' }">
+                <t-skeleton :row-col="SKELETON_CONFIG" :loading="associationConfig.load" />
+                <template v-if="!associationConfig.load">
+                  <div v-if="associationList.length > 0" class="association-textlist-items">
+                    <div
+                      v-for="(item, index) in associationList"
+                      :key="index"
+                      class="association-textlist-item txthide txthide1"
+                      @click="handleSearch(item.vod_name)"
+                    >
+                      {{ item.vod_name }}
+                    </div>
+                  </div>
+                  <div v-else class="empty">
+                    <t-empty />
+                  </div>
+                </template>
               </div>
-              <t-button
-                theme="default"
-                shape="square"
-                variant="text"
-                class="search-recommend-top-icon"
-                @click.stop="handleClearHistory"
-              >
-                <template #icon><delete-icon /></template>
-              </t-button>
             </div>
           </div>
 
-          <div v-show="isHotableRoute" class="search-recommend-bottom">
-            <div class="search-hot-nav">
-              <tag-nav :list="navOptions" :active="hotConfig.category" @change="handleSwitchHotTab" />
-            </div>
-            <div class="search-hot-content">
-              <t-skeleton :row-col="SKELETON_CONFIG" :loading="hotConfig.load" />
-              <template v-if="!hotConfig.load">
-                <div v-if="hotList.length > 0" class="search-hot-list">
+          <div v-show="searchValue.length === 0">
+            <div v-show="isSearchableRoute && historyList.length > 0" class="search-recommend-top">
+              <div class="search-textlist">
+                <div class="search-textlist-title">{{ $t('component.search.history') }}</div>
+                <div class="search-textlist-items">
                   <div
-                    v-for="(item, index) in hotList"
-                    :key="item.vod_id"
-                    class="search-hot-item"
-                    @click="handleSearch(item.vod_name)"
+                    v-for="(item, index) in historyList"
+                    :key="index"
+                    class="search-textlist-item txthide txthide1"
+                    @click="handleSearch(item.videoName)"
                   >
-                    <div class="search-hot-item_order" :class="`search-board-item_color${index + 1}`">
-                      {{ index + 1 }}
-                    </div>
-                    <div class="search-hot-item_text txthide txthide1">{{ item.vod_name }}</div>
-                    <div class="search-board-item_tag orange">{{ item.vod_hot }}</div>
+                    {{ item.videoName }}
                   </div>
                 </div>
-                <div v-else class="empty">
-                  <t-empty />
-                </div>
-              </template>
+                <t-button
+                  theme="default"
+                  shape="square"
+                  variant="text"
+                  class="search-recommend-top-icon"
+                  @click.stop="handleClearHistory"
+                >
+                  <template #icon><delete-icon /></template>
+                </t-button>
+              </div>
+            </div>
+
+            <div v-show="isHotableRoute" class="search-recommend-bottom">
+              <div class="search-hot-nav">
+                <tag-nav :list="navOptions" :active="hotConfig.category" @change="handleSwitchHotTab" />
+              </div>
+              <div class="search-hot-content">
+                <t-skeleton :row-col="SKELETON_CONFIG" :loading="hotConfig.load" />
+                <template v-if="!hotConfig.load">
+                  <div v-if="hotList.length > 0" class="search-hot-list">
+                    <div
+                      v-for="(item, index) in hotList"
+                      :key="item.vod_id"
+                      class="search-hot-item"
+                      @click="handleSearch(item.vod_name)"
+                    >
+                      <div class="search-hot-item_order" :class="`search-board-item_color${index + 1}`">
+                        {{ index + 1 }}
+                      </div>
+                      <div class="search-hot-item_text txthide txthide1">{{ item.vod_name }}</div>
+                      <div class="search-board-item_tag orange">{{ item.vod_hot }}</div>
+                    </div>
+                  </div>
+                  <div v-else class="empty">
+                    <t-empty />
+                  </div>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -107,12 +133,13 @@ defineOptions({
 });
 
 import { toSubtract, toYMD } from '@shared/modules/date';
+import { throttle } from 'es-toolkit';
 import { CloseCircleFilledIcon, DeleteIcon, SearchIcon } from 'tdesign-icons-vue-next';
 import type { PopupVisibleChangeContext } from 'tdesign-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { fetchRecHot } from '@/api/film';
+import { fetchRecAssociation, fetchRecHot } from '@/api/film';
 import { addHistory, delHistory, fetchHistoryPage } from '@/api/moment';
 import { getSettingDetail } from '@/api/setting';
 import TagNav from '@/components/tag-nav/index.vue';
@@ -128,6 +155,7 @@ const POPUP_CONTENT_ROUTES = Object.keys(RELATE_MAP).filter((name) => !['Live'].
 const MAX_HISTORY_SIZE = 10;
 const MAX_HOT_ITEMS = 10;
 const MAX_RETRY_COUNT = 3;
+const MAX_ASSOCIATION_ITEMS = 10;
 const SKELETON_CONFIG = Array.from(Array.from({ length: 4 }), () => ({
   type: 'text',
   width: '100%',
@@ -148,6 +176,12 @@ const hotConfig = ref({
   category: 1,
   load: true,
   active: 'kylive',
+});
+
+const associationList = ref<any[]>([]);
+const associationConfig = ref({
+  load: true,
+  active: 'douban',
 });
 
 const historyList = ref<any[]>([]);
@@ -182,6 +216,16 @@ watch(
   },
 );
 
+watch(
+  () => searchValue.value,
+  (val) => {
+    if (val.length < 1) return;
+
+    associationList.value = [];
+    throttleGetSuggestList();
+  },
+);
+
 const getSiteConfig = async () => {
   try {
     const resp = await getSettingDetail('site');
@@ -204,9 +248,20 @@ const getHotConfig = async () => {
   }
 };
 
+const getAssociationConfig = async () => {
+  try {
+    const resp = await getSettingDetail('association');
+    if (resp) {
+      associationConfig.value.active = resp;
+    }
+  } catch (error) {
+    console.error('Failed to load association config:', error);
+  }
+};
+
 const getFilmConf = async () => {
   try {
-    await Promise.all([getSiteConfig(), getHotConfig()]);
+    await Promise.all([getSiteConfig(), getHotConfig(), getAssociationConfig()]);
   } catch {}
 };
 
@@ -235,6 +290,28 @@ const getHotList = async (retryCount: number = 1) => {
     hotConfig.value.load = false;
   }
 };
+
+const getSuggestList = async () => {
+  associationConfig.value.load = true;
+
+  try {
+    const kw = searchValue.value.trim();
+
+    const resp = await fetchRecAssociation({
+      kw,
+      source: associationConfig.value.active,
+    });
+
+    if (resp?.length) {
+      associationList.value = resp.slice(0, MAX_ASSOCIATION_ITEMS);
+    }
+  } catch (error) {
+    console.error('Failed to load association list:', error);
+  } finally {
+    associationConfig.value.load = false;
+  }
+};
+const throttleGetSuggestList = throttle(getSuggestList, 1000, { edges: ['leading', 'trailing'] });
 
 const getHistoryConfig = async () => {
   try {
@@ -324,6 +401,10 @@ const reloadConfig = async ({ data: eventData }) => {
 
   hotList.value = [];
   hotConfig.value.load = true;
+
+  associationList.value = [];
+  associationConfig.value.load = true;
+
   isPopupVisible.value = false;
 
   searchValue.value = '';
@@ -374,7 +455,8 @@ const reloadKwConfig = async ({ data: eventData }) => {
     flex-direction: column;
     gap: var(--td-size-4);
 
-    .search-textlist {
+    .search-textlist,
+    .search-association {
       align-items: flex-start;
       display: flex;
       flex-direction: column;
@@ -382,7 +464,8 @@ const reloadKwConfig = async ({ data: eventData }) => {
       position: relative;
       width: 100%;
 
-      .search-textlist-title {
+      .search-textlist-title,
+      .search-association-title {
         font-size: var(--td-font-size-title-medium);
         line-height: calc(var(--td-font-size-title-medium) + 1px);
       }
@@ -398,14 +481,16 @@ const reloadKwConfig = async ({ data: eventData }) => {
       }
     }
 
-    .search-textlist-items {
+    .search-textlist-items,
+    .association-textlist-items {
       display: flex;
       flex-wrap: wrap;
       margin-top: var(--td-comp-margin-s);
       max-height: 68px;
       overflow: hidden;
 
-      .search-textlist-item {
+      .search-textlist-item,
+      .association-textlist-item {
         background-color: var(--td-bg-color-secondarycontainer);
         border-radius: var(--td-radius-medium);
         cursor: pointer;

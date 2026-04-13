@@ -2,7 +2,7 @@
   <div class="layout-player">
     <t-layout :class="[`${prefix}-layout`]">
       <t-header class="drag-region" :class="[`${prefix}-header`, active.headerPin ? 'pin' : '']">
-        <l-header :title="title" />
+        <l-header :title="title" :browse="headerFormData.browse" @browse="handleBrowse" />
       </t-header>
       <t-layout :class="[`${prefix}-main`]">
         <t-content :class="[`${prefix}-content`]">
@@ -37,6 +37,8 @@
 import { APP_NAME } from '@shared/config/appinfo';
 import { SYSTEM_M3U8_AD_REMOVE_API } from '@shared/config/env';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
+import { WINDOW_NAME } from '@shared/config/window';
+import { isArray, isArrayEmpty } from '@shared/modules/validate';
 import type { IBarrageResult } from '@shared/types/barrage';
 import { merge } from 'es-toolkit';
 import { ChevronLeftIcon, ChevronRightIcon } from 'tdesign-icons-vue-next';
@@ -78,6 +80,9 @@ const processFormData = ref<IVideoProcess>({
   currentTime: 0,
   duration: 0,
 });
+const headerFormData = ref({
+  browse: false,
+});
 const playerStoreFormData = computed<IStorePlayer>(() => storePlayer.$state);
 
 const active = ref({
@@ -109,6 +114,22 @@ const setup = () => {
     window.electron.ipcRenderer.send(IPC_CHANNEL.WINDOW_DESTROY_RELAY);
   });
 
+  window.electron.ipcRenderer.on(IPC_CHANNEL.MEDIA_PAUSE, (_event, status) => {
+    status === true ? playerRef.value?.pause() : playerRef.value?.play();
+  });
+
+  window.electron.ipcRenderer.on(IPC_CHANNEL.MEDIA_BROWSE, (_event, status) => {
+    if (headerFormData.value.browse) {
+      if (status) {
+        window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_HIDE, WINDOW_NAME.PLAYER);
+        playerRef.value?.pause();
+      } else {
+        window.electron.ipcRenderer.invoke(IPC_CHANNEL.WINDOW_SHOW, WINDOW_NAME.PLAYER);
+        playerRef.value?.play();
+      }
+    }
+  });
+
   document.title = `${APP_NAME}(${t('pages.player.title')})`;
 };
 
@@ -120,13 +141,20 @@ const toggleAside = () => {
   active.value.aside = !active.value.aside;
 };
 
+const handleBrowse = (val: boolean) => {
+  headerFormData.value.browse = val;
+};
+
 const handleUrlAdRemove = (url: string, remove: boolean = false): string => {
-  if (remove && url.startsWith('http') && !url.startsWith(SYSTEM_M3U8_AD_REMOVE_API)) {
+  if (!url.startsWith('http')) return url;
+
+  if (remove && !url.startsWith(SYSTEM_M3U8_AD_REMOVE_API)) {
     return `${SYSTEM_M3U8_AD_REMOVE_API}?url=${encodeURIComponent(url)}`;
   }
-  if (!remove && url.startsWith('http') && url.startsWith(SYSTEM_M3U8_AD_REMOVE_API)) {
+  if (!remove && url.startsWith(SYSTEM_M3U8_AD_REMOVE_API)) {
     return decodeURIComponent(url.replace(`${SYSTEM_M3U8_AD_REMOVE_API}?url=`, ''));
   }
+
   return url;
 };
 
@@ -152,7 +180,10 @@ const handlePlayerCreate = async (
     const finalItem: IMultiPlayerOptions = {
       ...item,
       url: handleUrlAdRemove(item.url, item.skipAd),
-      quality: (item.quality || []).map((q) => ({ ...q, url: handleUrlAdRemove(q.url, item.skipAd) })),
+      quality:
+        isArray(item.quality) && !isArrayEmpty(item.quality)
+          ? item.quality.map((q) => ({ name: q.name, url: handleUrlAdRemove(q.url, item.skipAd) }))
+          : [],
     };
     playerFormData.value = merge(playerFormData.value, finalItem);
     await playerRef.value?.create(playerFormData.value, player.type, mode);

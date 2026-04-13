@@ -1,3 +1,5 @@
+import '@main/services/ProxyManager/bootstrap';
+
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
 
@@ -48,6 +50,19 @@ const isLikelyPath = (p: string) => {
   if (path.isAbsolute(p)) return true;
   if (p.includes('/') || p.includes('\\')) return true;
   return false;
+};
+
+const serialize2dict = (headers: { [key: string]: any } = {}) => {
+  const headersDict = {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'set-cookie') {
+      headersDict[key] = Array.isArray(value) ? value : [value];
+    } else {
+      headersDict[key] = [value];
+    }
+  }
+  return headersDict;
 };
 
 const fetch = async (url: string, options: RequestOptions = {}) => {
@@ -142,6 +157,7 @@ const fetch = async (url: string, options: RequestOptions = {}) => {
       const buffer = Buffer.from(resp.data);
       return encoding ? buffer.toString(encoding) : buffer;
     };
+    resp.headers = serialize2dict(resp.headers);
 
     const { onlyHeaders, withHeaders, withStatusCode, toHex } = options || {};
 

@@ -343,13 +343,10 @@ class PluginService {
                 const { type, level, msg } = payload;
 
                 if (type === 'log') {
-                  const msgType = msg?.type;
+                  // const msgType = msg.type;
                   const msgList = msg?.msg ?? [];
 
-                  const log =
-                    msgType === 'single'
-                      ? msgList[0]
-                      : msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
+                  const log = msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
 
                   const logger = loggerService.withContext(`${LOG_MODULE.PLUGIN}<${pluginInfo.pluginName}>`);
                   logger[level](log);
@@ -409,13 +406,10 @@ class PluginService {
                 const { type, level, msg } = payload;
 
                 if (type === 'log') {
-                  const msgType = msg?.type;
+                  // const msgType = msg.type;
                   const msgList = msg?.msg ?? [];
 
-                  const log =
-                    msgType === 'single'
-                      ? msgList[0]
-                      : msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
+                  const log = msgList.map((t: any) => (isJson(t) ? JSON.stringify(t) : t)).join(' ');
 
                   const logger = loggerService.withContext(`${LOG_MODULE.PLUGIN}<${pluginInfo.pluginName}>`);
                   logger[level](log);

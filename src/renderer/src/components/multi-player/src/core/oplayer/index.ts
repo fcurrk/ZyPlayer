@@ -17,7 +17,7 @@ import { merge } from 'es-toolkit';
 import { emitterChannel } from '@/config/emitterChannel';
 import emitter from '@/utils/emitter';
 
-import WebTorrentjs from '../../modules/webtorrent.min.js';
+import WebTorrentjs from '../../assets/decoder/webtorrent.min.js';
 import type { IBarrage, IBarrageSendOptions, IMultiPlayerOptions } from '../../types';
 import { color, icons, language } from '../../utils/static';
 import { storage } from '../../utils/storage';

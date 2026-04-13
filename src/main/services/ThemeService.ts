@@ -34,16 +34,20 @@ export class ThemeService {
   }
 
   private themeUpdatedHandler() {
-    windowService.getAllWindows().forEach((win) => {
-      if (win && !win.isDestroyed() && win.setTitleBarOverlay) {
+    windowService.getAllWindows().forEach((mainWindow) => {
+      if (mainWindow && !mainWindow.isDestroyed() && mainWindow.setTitleBarOverlay) {
         try {
-          win.setTitleBarOverlay(nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight);
+          mainWindow.setTitleBarOverlay(nativeTheme.shouldUseDarkColors ? titleBarOverlayDark : titleBarOverlayLight);
         } catch {
           // don't throw error if setTitleBarOverlay failed
           // Because it may be called with some windows have some title bar
         }
       }
-      win.webContents.send(IPC_CHANNEL.THEME_UPDATED, nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT);
+
+      mainWindow.webContents.send(
+        IPC_CHANNEL.THEME_UPDATED,
+        nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT,
+      );
     });
   }
 

@@ -1,4 +1,4 @@
-import { cipher } from 'node-forge';
+import forge from 'node-forge';
 
 import type { AesOptionsNew, Pad } from '../../type';
 import {
@@ -39,7 +39,7 @@ const getPad = (pad: string): Pad => {
 /**
  * 获取加密模式
  */
-const getMode = (mode: string): cipher.Algorithm => {
+const getMode = (mode: string): forge.cipher.Algorithm => {
   switch (mode.toLowerCase()) {
     case 'cfb':
       return 'AES-CFB';
@@ -120,7 +120,7 @@ export const aes = {
     const srcBuffer = wordArrayParse[inputEncode](src);
     const aadBuffer = mode.toLowerCase() === 'gcm' && aad ? wordArrayParse[aadEncode](aad) : undefined;
 
-    const encipher = cipher.createCipher(
+    const encipher = forge.cipher.createCipher(
       getMode(mode),
       forgeArrayToBytes(wordArrayToArray(keyBuffer) as unknown as ArrayBuffer),
     );
@@ -218,7 +218,7 @@ export const aes = {
     const aadBuffer = mode.toLowerCase() === 'gcm' && aad ? wordArrayParse[aadEncode](aad) : undefined;
     const tagBuffer = mode.toLowerCase() === 'gcm' && tag ? wordArrayParse[tagEncode](tag) : undefined;
 
-    const decipher = cipher.createDecipher(
+    const decipher = forge.cipher.createDecipher(
       getMode(mode),
       forgeArrayToBytes(wordArrayToArray(keyBuffer) as unknown as ArrayBuffer),
     );

@@ -20,10 +20,13 @@ import { trayService } from '@main/services/TrayService';
 import { windowService } from '@main/services/WindowService';
 import { isDev, isLinux, isMacOS, isWindows } from '@main/utils/systeminfo';
 import { APP_NAME, APP_NAME_PROTOCOL } from '@shared/config/appinfo';
+import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { LOG_MODULE } from '@shared/config/logger';
+import { CacheService } from '@shared/modules/cache';
 import { runFunction } from '@shared/modules/function';
 import { isBoolean, isHttp } from '@shared/modules/validate';
-import { app, crashReporter } from 'electron';
+import type { IAuthCacheProgress, IAuthCert, IAuthRelayPayload } from '@shared/types/auth';
+import { app, BrowserWindow, crashReporter, ipcMain } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 
 const logger = loggerService.withContext(LOG_MODULE.MAIN);
@@ -166,7 +169,83 @@ const setupReady = () => {
     }
   });
 
-  app.on('activate', function () {
+  app.on(
+    'login',
+    (
+      event: Electron.Event,
+      webContents: Electron.WebContents,
+      request: Electron.AuthenticationResponseDetails,
+      authInfo: Electron.AuthInfo,
+      callback,
+    ) => {
+      if (authInfo.isProxy || authInfo.scheme !== 'basic') return;
+      event.preventDefault();
+
+      const url = request.url;
+      const key = `${authInfo.scheme}:${authInfo.host}:${authInfo.port}:${authInfo.realm}`;
+      const progressKey = `login-progress:${key}`;
+      const authKey = `login-auth:${key}`;
+      const attemptKey = `login-attempt:${key}`;
+
+      logger.info(`Received login request for ${url}`);
+
+      // If caching has been tried before, it means that caching is wrong
+      if (CacheService.has(attemptKey)) {
+        CacheService.remove(authKey);
+        CacheService.remove(attemptKey);
+      }
+
+      // Try cache
+      if (CacheService.has(authKey)) {
+        const { username, password } = CacheService.get<IAuthCert>(authKey)!;
+        CacheService.set(attemptKey, true); // Mark cache attempt
+        callback(username, password);
+        return;
+      }
+
+      CacheService.set(progressKey, { callback, webContentsId: webContents.id, url }); // Store current auth context
+
+      const mainWindow = BrowserWindow.fromWebContents(webContents)!;
+      mainWindow.webContents.send(IPC_CHANNEL.LOGIN_BASIC, { authInfo, webContentsId: webContents.id, url });
+      // webContents.send(IPC_CHANNEL.LOGIN_BASIC, { authInfo, webContentsId: webContents.id, url });
+
+      ipcMain.once(IPC_CHANNEL.LOGIN_BASIC_RELAY, (_, payload: IAuthRelayPayload) => {
+        const { authInfo, authCert, webContentsId } = payload;
+        const { username, password } = authCert;
+
+        const key = `${authInfo.scheme}:${authInfo.host}:${authInfo.port}:${authInfo.realm}`;
+        const progressKey = `login-progress:${key}`;
+        const progress = CacheService.get<IAuthCacheProgress>(progressKey);
+
+        if (!progress || progress.webContentsId !== webContentsId) return;
+
+        progress.callback(username, password); // Callback auth
+        CacheService.set(`login-auth:${key}`, { username, password }); // Set auth cache
+
+        CacheService.remove(progressKey); // Clean progress cache
+      });
+    },
+  );
+
+  app.on('web-contents-created', (_, webContents) => {
+    webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Document-Policy': ['include-js-call-stacks-in-crash-reports'],
+        },
+      });
+    });
+
+    webContents.on('unresponsive', async () => {
+      // Interrupt execution and collect call stack from unresponsive renderer
+      logger.error('Renderer unresponsive start');
+      const callStack = await webContents.mainFrame.collectJavaScriptCallStack();
+      logger.error(`Renderer unresponsive js call stack\n ${callStack}`);
+    });
+  });
+
+  app.on('activate', () => {
     const windowNames = windowService.getAllNames();
     if (windowNames.length === 0) {
       windowService.createMainWindow();
@@ -241,7 +320,9 @@ const main = async () => {
     appLocale.init();
     setupReady();
 
-    runFunction(() => pluginService.autoLaunch());
+    runFunction(() => {
+      pluginService.autoLaunch();
+    });
   }
 };
 

@@ -18,18 +18,32 @@ export default {
         large: 'Large',
       },
     },
-    hot: 'Hot',
-    site: {
-      title: 'Site',
-      hotMap: {
+
+    hot: {
+      title: 'Hot',
+      map: {
         baidu: 'Baidu',
         douban: 'Douban',
         enlightent: 'Enlightent',
+        hisense: 'Hisense',
         kylive: 'Kylive',
         komect: 'Komect',
         quark: 'Quark',
       },
-      searchMap: {
+    },
+    association: {
+      title: 'Association',
+      map: {
+        douban: 'Douban',
+        hisense: 'Hisense',
+        komect: 'Komect',
+        iqiyi: 'Iqiyi',
+        snm: 'Snm',
+      },
+    },
+    site: {
+      title: 'Site',
+      search: {
         local: 'Local',
         group: 'Group',
         all: 'All',

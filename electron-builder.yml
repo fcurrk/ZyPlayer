@@ -82,8 +82,9 @@ files:
   - '!*.log'
   - '!**/{LICENSE,LICENSE.txt,ThirdPartyNotices.txt,NOTICE.txt,README.md,RELEASE.md,CHANGELOG.md}'
   - '!node_modules/rollup-plugin-visualizer'
-asar: true
+
 asarUnpack:
+  - out/proxy/**
   - resources/**
 win:
   artifactName: ${productName}-${os}-${version}-${arch}-setup.${ext}

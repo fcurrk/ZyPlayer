@@ -9,7 +9,7 @@
                 <span class="title">{{ translateDate[name] }}</span>
               </div>
               <div class="content-wrapper-main">
-                <t-row :gutter="[16, 4]" style="margin-left: -8px; margin-right: -8px">
+                <t-row :gutter="[16, 4]" :style="{ marginLeft: '-8px', marginRight: '-8px' }">
                   <t-col
                     v-for="item in historyList"
                     :key="item.id"

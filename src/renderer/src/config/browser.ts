@@ -3,6 +3,7 @@ export interface IBrowserItem {
   title: string;
   url: string;
   favicon: string;
+  headers?: Record<string, any>;
 }
 
 export interface IBrowser {

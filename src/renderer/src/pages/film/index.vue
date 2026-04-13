@@ -96,7 +96,7 @@
 
       <div id="back-top" class="container">
         <div class="content-wrapper">
-          <t-row :gutter="[16, 4]" style="margin-left: -8px; margin-right: -8px">
+          <t-row :gutter="[16, 4]" :style="{ marginLeft: '-8px', marginRight: '-8px' }">
             <t-col
               v-for="item in filmList"
               :key="item.vod_id"
@@ -490,8 +490,10 @@ const loadMoreSearch = async (): Promise<number> => {
 const loadMore = async ($state: ILoadStateHdandler) => {
   try {
     if (active.value.loadStatus !== 'complete') {
-      $state.complete();
-      return;
+      if (!(searchValue.value && !isArrayEmpty(config.value.searchList))) {
+        $state.complete();
+        return;
+      }
     }
 
     const length = searchValue.value ? await loadMoreSearch() : await loadMoreCategory();

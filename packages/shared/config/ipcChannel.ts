@@ -23,6 +23,8 @@ export enum IPC_CHANNEL {
   // business
   BROWSER_NAVIGATE = 'business:browser-navigate',
   CALL_PLAYER = 'business:call-player',
+  MEDIA_PAUSE = 'business:media-pause',
+  MEDIA_BROWSE = 'business:media-browse',
 
   // change
   CHANGE_THEME = 'change:theme',
@@ -52,6 +54,10 @@ export enum IPC_CHANNEL {
   FS_DIR_CREATE = 'fs:dir-create',
 
   INSTALL_UV_BINARY = 'app:install-uv-binary',
+
+  // login
+  LOGIN_BASIC = 'login:basic',
+  LOGIN_BASIC_RELAY = 'login:basic-relay',
 
   // logger
   APP_LOG_TO_MAIN = 'app:log-to-main',
@@ -103,6 +109,8 @@ export enum IPC_CHANNEL {
   WEBVIEW_SPELL_CHECK = 'webview:spell-check',
   WEBVIEW_LINK_BLOCK = 'webview:link-block',
   WEBVIEW_LINK_BLOCK_RELAY = 'webview:link-block-relay',
+  WEBVIEW_HEADER_BLOCK = 'webview:header-block',
+  WEBVIEW_SEARCH_HOTKEY = 'webview:search-hotkey',
 
   // window
   WINDOW_CLOSE = 'window:close',

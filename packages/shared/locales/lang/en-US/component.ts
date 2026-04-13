@@ -1,6 +1,7 @@
 export default {
   action: {
     countdown: '{0}s to close',
+    fullview: 'Full View',
   },
   hot: {
     title: 'Hot Searches',
@@ -16,6 +17,7 @@ export default {
   },
   search: {
     title: 'Search',
+    association: 'Search Association',
     history: 'Search History',
     placeholder: {
       input: 'Search all network resources',

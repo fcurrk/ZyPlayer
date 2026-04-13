@@ -1,35 +1,35 @@
-import { util } from 'node-forge';
+import forge from 'node-forge';
 
 const bytesTobase64 = (bytes: string): string => {
-  return util.encode64(bytes);
+  return forge.util.encode64(bytes);
 };
 
 const bytesToHex = (bytes: string): string => {
-  return util.bytesToHex(bytes);
+  return forge.util.bytesToHex(bytes);
 };
 
 const bytesToUtf8 = (bytes: string): string => {
-  return util.decodeUtf8(bytes);
+  return forge.util.decodeUtf8(bytes);
 };
 
 const bytesToUtf16 = (bytes: Uint8Array<ArrayBufferLike>): string => {
-  return util.text.utf16.decode(bytes);
+  return forge.util.text.utf16.decode(bytes);
 };
 
 const hexToBytes = (str: string): string => {
-  return util.hexToBytes(str);
+  return forge.util.hexToBytes(str);
 };
 
 const base64ToBytes = (str: string): string => {
-  return util.decode64(str);
+  return forge.util.decode64(str);
 };
 
 const utf8ToBytes = (str: string): string => {
-  return util.encodeUtf8(str);
+  return forge.util.encodeUtf8(str);
 };
 
 const utf16ToBytes = (str: string): Uint8Array => {
-  return util.text.utf16.encode(str);
+  return forge.util.text.utf16.encode(str);
 };
 
 export const parse = {
@@ -46,8 +46,8 @@ export const stringify = {
   base64: bytesTobase64,
 };
 
-export const cloneBytes = (buffer: util.ByteBuffer): util.ByteBuffer => {
-  const clonedBuffer = util.createBuffer();
+export const cloneBytes = (buffer: forge.util.ByteBuffer): forge.util.ByteBuffer => {
+  const clonedBuffer = forge.util.createBuffer();
   const data = buffer.getBytes();
   clonedBuffer.putBytes(data);
 
@@ -55,12 +55,12 @@ export const cloneBytes = (buffer: util.ByteBuffer): util.ByteBuffer => {
 };
 
 export const arrayToBytes = (
-  array: string | ArrayBuffer | util.ArrayBufferView | util.ByteStringBuffer,
-): util.ByteBuffer => {
-  return util.createBuffer(array);
+  array: string | ArrayBuffer | forge.util.ArrayBufferView | forge.util.ByteStringBuffer,
+): forge.util.ByteBuffer => {
+  return forge.util.createBuffer(array);
 };
 
-export const bytesToArray = (buffer: util.ByteBuffer): Uint8Array => {
+export const bytesToArray = (buffer: forge.util.ByteBuffer): Uint8Array => {
   const clonedData = cloneBytes(buffer);
   const bytesStr = clonedData.getBytes();
   const uint8Array = new Uint8Array(bytesStr.length);
