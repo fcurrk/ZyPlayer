@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { Stream } from 'node:stream';
 
 import { loggerService } from '@logger';
+import { appLocale } from '@main/services/AppLocale';
 import { pathExist } from '@main/utils/file';
 import { HOME_BIN_PATH } from '@main/utils/path';
 import { chmodBinary, getBinaryName, killPid, matchPort, matchPs } from '@main/utils/process';
@@ -20,11 +21,13 @@ export interface IPythonOptions {
 export class PythonService {
   projectBasePath: string;
   uvBinaryPath: string;
+  registry: string;
   childProcess: ChildProcessByStdio<null, Stream.Readable, Stream.Readable> | null = null;
 
   constructor(options: IPythonOptions) {
     this.projectBasePath = options.projectBasePath;
     this.uvBinaryPath = join(HOME_BIN_PATH, getBinaryName('uv'));
+    this.registry = appLocale.isCHS() ? 'https://mirrors.aliyun.com/pypi/simple' : 'https://pypi.org/simple';
   }
 
   async checkBinary() {
@@ -54,11 +57,11 @@ export class PythonService {
       const requirementsPath = join(this.projectBasePath, 'requirements.txt');
 
       const cmd = (await pathExist(tomlPath))
-        ? [this.uvBinaryPath, 'sync', '--native-tls']
+        ? [this.uvBinaryPath, 'sync', '--native-tls', '', '--default-index', this.registry]
         : (await pathExist(requirementsPath))
-          ? [this.uvBinaryPath, 'pip', 'install', '-r', 'requirements.txt']
+          ? [this.uvBinaryPath, 'pip', 'install', '-r', 'requirements.txt', '-i', this.registry]
           : isArray(pkgs) && !isArrayEmpty(pkgs)
-            ? [this.uvBinaryPath, 'pip', 'install', ...pkgs]
+            ? [this.uvBinaryPath, 'pip', 'install', ...pkgs, '-i', this.registry]
             : null;
 
       if (isNil(cmd)) {
