@@ -129,3 +129,32 @@ export const tripleDesEncode = (val: string, key: string, iv: string, mode?: Mod
   tripleDes.encode({ src: val, key, iv, mode, pad });
 export const tripleDesDecode = (val: string, key: string, iv: string, mode?: Mode, pad?: Pad) =>
   tripleDes.decode({ src: val, key, iv, mode, pad });
+export const tripleDesX = (
+  mode: Mode,
+  encrypt: boolean,
+  input: string,
+  inBase64: boolean,
+  key: string,
+  iv: string,
+  outBase64: boolean,
+) => {
+  if (encrypt) {
+    return tripleDes.encode({
+      src: input,
+      key,
+      iv,
+      mode,
+      inputEncode: inBase64 ? 'base64' : 'utf8',
+      outputEncode: outBase64 ? 'base64' : 'utf8',
+    });
+  } else {
+    return tripleDes.decode({
+      src: input,
+      key,
+      iv,
+      mode,
+      inputEncode: inBase64 ? 'base64' : 'utf8',
+      outputEncode: outBase64 ? 'base64' : 'utf8',
+    });
+  }
+};

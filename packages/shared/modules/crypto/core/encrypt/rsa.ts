@@ -106,7 +106,6 @@ const getMaxMsgBytes = (
     const algorithm = getHashAlgorithm(pad);
     if (!algorithm) throw new Error(`Unsupported OAEP hash algorithm for pad: ${pad}`);
     const hashSizeBytes = forge.md[algorithm].create().digestLength;
-    console.log(hashSizeBytes, keySizeBytes - 2 * hashSizeBytes - 2);
 
     return keySizeBytes - 2 * hashSizeBytes - 2; // ≈‌ Math.ceil(keySizeBits / 8) - 2 * hashSizeBytes - 2
   } else if (padding === 'RSAES-PKCS1-V1_5') {
@@ -121,12 +120,14 @@ const getMaxMsgBytes = (
  */
 export const rsa = {
   /**
-   * RSA 加密 - 不支持私钥加密
-   * https://emn178.github.io/online-tools/rsa/encrypt/
+   * RSA 加密
+   * 1/224/256/384: https://emn178.github.io/online-tools/rsa/encrypt/
+   * 1/256/384/512: https://tools.tdsay.cn/view/tool/encryptRsa.html
    * https://rivers.chaitin.cn/toolkit/cyberChef/RSAEncrypt
    * http://tool.chacuo.net/cryptrsapubkey
-   * https://the-x.cn/cryptography/Rsa.aspx
-   * https://www.toolzl.com/tools/testrsa.html
+   * 超长文本: https://www.toolzl.com/tools/testrsa.html
+   * 变态模式: https://the-x.cn/cryptography/Rsa.aspx
+   * 变态模式: https://apiked.com/rsa
    *
    * @param {RsaOptions} options - 加密参数
    * @returns {string} - 加密结果
@@ -159,9 +160,9 @@ export const rsa = {
       src,
       key,
       passphrase = '',
-      type = 0, // 0: 公钥加密, 1: 私钥加密（非标不支持）
+      type = 0, // 0: 公钥加密, 1: 私钥加密（非标）
       long = false,
-      longBlock = 117,
+      longBlock = 117, // auto/117/128
       pad = 'rsaes-pkcs1-v1_5',
       passphraseEncode = 'utf8',
       inputEncode = 'utf8',
@@ -179,8 +180,13 @@ export const rsa = {
     const plaintextBytes = forgeArrayToBytes(wordArrayToArray(plaintextBuffer) as unknown as ArrayBuffer).getBytes();
 
     const encryptFn = (data: string): string => {
-      if (type === 0) return (rsaKey as forge.pki.rsa.PublicKey).encrypt(data, scheme, schemeOptions);
-      else throw new Error('Private key encryption is not supported');
+      if (type === 0) {
+        return (rsaKey as forge.pki.rsa.PublicKey).encrypt(data, scheme, schemeOptions);
+      } else {
+        if (scheme !== 'RSAES-PKCS1-V1_5')
+          throw new Error('Private key encryption only supports RSAES-PKCS1-V1_5 padding');
+        throw new Error('Private key encryption is not supported');
+      }
     };
 
     let encrypted = '';
@@ -201,10 +207,14 @@ export const rsa = {
     return forgeStringify[outputEncode](encrypted);
   },
   /**
-   * RSA 解密 - 支持长解密
-   * https://emn178.github.io/online-tools/rsa/decrypt/
+   * RSA 解密
+   * 1/224/256/384: https://emn178.github.io/online-tools/rsa/decrypt/
+   * 1/256/384/512: https://tools.tdsay.cn/view/tool/encryptRsa.html
    * https://rivers.chaitin.cn/toolkit/cyberChef/RSADecrypt
    * http://tool.chacuo.net/cryptrsaprikey
+   * 超长文本: https://www.toolzl.com/tools/testrsa.html
+   * 变态模式: https://the-x.cn/cryptography/Rsa.aspx
+   * 变态模式: https://apiked.com/rsa
    *
    * @param {RsaOptions} options - 解密参数
    * @returns {string} - 解密结果
@@ -258,7 +268,7 @@ export const rsa = {
       src,
       key,
       passphrase = '',
-      type = 1, // 0: 公钥解密（非标不支持）, 1: 私钥解密
+      type = 1, // 0: 公钥解密（非标）, 1: 私钥解密
       long = false,
       pad = 'rsaes-pkcs1-v1_5',
       passphraseEncode = 'utf8',
@@ -277,8 +287,13 @@ export const rsa = {
     const cipherBytes = forgeArrayToBytes(wordArrayToArray(cipherBuffer) as unknown as ArrayBuffer).getBytes();
 
     const decryptFn = (data: string): string => {
-      if (type === 0) throw new Error('Public key decryption is not supported');
-      else return (rsaKey as forge.pki.rsa.PrivateKey).decrypt(data, scheme, schemeOptions);
+      if (type === 0) {
+        if (scheme !== 'RSAES-PKCS1-V1_5')
+          throw new Error('Public key encryption only supports RSAES-PKCS1-V1_5 padding');
+        throw new Error('Public key decryption is not supported');
+      } else {
+        return (rsaKey as forge.pki.rsa.PrivateKey).decrypt(data, scheme, schemeOptions);
+      }
     };
 
     let decrypted = '';
