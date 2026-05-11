@@ -11,6 +11,7 @@
 - 修复: terminal组件触发applyTheme但搜索框dom未创建时报错; 未调用onLinkClickCallback
 - 修复: 实验室ui插件预览按钮不生效
 - 修复: 部分情况自动下集不稳定 [issue #488]
+- 修复: 导入数据标准后空数据提示导入成功
 - 变动: 依赖库升级
 
 [View on GitHub](https://github.com/Hiram-Wong/ZyPlayer/releases/tag/v3.4.6)
