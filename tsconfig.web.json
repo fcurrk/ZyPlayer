@@ -2,20 +2,23 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "include": [
     "src/renderer/src/**/*",
-    "src/preload/**/*",
+    "src/preload/*.d.ts",
     "packages/shared/**/*",
+    // "node_modules/tdesign-vue-next/global.d.ts"
   ],
   "exclude": [
     "src/renderer/src/pages/lab/components/edit/utils/inject/**/*"
   ],
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "composite": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo/tsconfig.web.tsbuildinfo",
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "moduleResolution": "bundler",
-    "types": ["vite/client", "vitest/globals"],
+    "noEmit": true,
     "paths": {
       "@/*": ["./src/renderer/src/*"],
       "@main/*": ["./src/main/*"],
@@ -25,8 +28,8 @@
       "@logger": ["./src/main/services/LoggerService"],
       "@pkg": ["./package.json"]
     },
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "tsBuildInfoFile": ".tsbuildinfo/tsconfig.web.tsbuildinfo",
+    "types": ["vite/client", "vitest/globals"],
     "useDefineForClassFields": true
   }
 }

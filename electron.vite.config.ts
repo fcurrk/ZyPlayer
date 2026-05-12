@@ -5,7 +5,6 @@ import { TDesignResolver } from '@tdesign-vue-next/auto-import-resolver';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import { defineConfig } from 'electron-vite';
-import { visualizer } from 'rollup-plugin-visualizer';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import viteVueDevTools from 'vite-plugin-vue-devtools';
@@ -17,10 +16,6 @@ import { buildProxyBootstrapPlugin } from './scripts/buildProxyBootstrapPlugin';
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
 
-const visualizerPlugin = (type: 'renderer' | 'main') => {
-  return process.env[`VISUALIZER_${type.toUpperCase()}`] ? [visualizer({ open: true })] : [];
-};
-
 /**
  * @see https://vitejs.dev/config/
  * @see https://rolldown.rs/reference/config-options/
@@ -28,7 +23,6 @@ const visualizerPlugin = (type: 'renderer' | 'main') => {
 export default defineConfig({
   main: {
     plugins: [
-      ...visualizerPlugin('main'),
       buildProxyBootstrapPlugin({
         dependencies: Object.keys(pkg.dependencies),
         isProd,
@@ -112,10 +106,7 @@ export default defineConfig({
           },
         },
       }),
-      vueJsx({
-        transformOn: true,
-        // oxc: true,
-      }),
+      vueJsx(),
       AutoImport({
         resolvers: [
           TDesignResolver({
@@ -138,7 +129,6 @@ export default defineConfig({
       }),
       viteSvgLoader(),
       ...(isDev ? [viteVueDevTools()] : []),
-      ...visualizerPlugin('renderer'),
     ],
     resolve: {
       alias: {

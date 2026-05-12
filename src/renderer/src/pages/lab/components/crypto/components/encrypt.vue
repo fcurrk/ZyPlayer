@@ -7,7 +7,7 @@
           ref="formRef"
           :data="formData"
           :rules="RULES"
-          :label-width="80"
+          :label-width="90"
           required-mark-position="right"
           label-align="left"
           reset-type="initial"
@@ -65,7 +65,7 @@
             </t-input-adornment>
           </t-form-item>
           <t-form-item
-            v-if="!['rsa', 'rc4', 'rc4Drop', 'rabbit', 'rabbitLegacy'].includes(active.action)"
+            v-if="!['rc4', 'rc4Drop', 'rabbit', 'rabbitLegacy'].includes(active.action)"
             :label="$t('pages.lab.crypto.encrypt.field.mode')"
             name="mode"
           >
@@ -76,7 +76,9 @@
           <t-form-item
             v-if="
               !['rc4', 'rc4Drop', 'rabbit', 'rabbitLegacy'].includes(active.action) &&
-              ['cbc', 'ecb'].includes(formData.mode)
+              ((['aes', 'des', '3des', 'sm4'].includes(active.action) &&
+                ['cbc', 'ecb'].includes(formData.mode as string)) ||
+                (active.action === 'rsa' && [0, 1].includes(formData.mode as number)))
             "
             :label="$t('pages.lab.crypto.encrypt.field.pad')"
             name="pad"
@@ -169,7 +171,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { aes, des, rabbit, rabbitLegacy, rc4, rc4Drop, rsa, sm4, tripleDes } from '@shared/modules/crypto';
+import { aes, des, rabbit, rabbitLegacy, rc4, rc4Drop, rsa, sm4, tripleDes } from '@zy/crypto';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { computed, ref, useTemplateRef, watch } from 'vue';
@@ -187,6 +189,7 @@ const RULES = {
   input: [{ required: true }],
   key: [{ required: true }],
   mode: [{ required: true }],
+  rsaMode: [{ required: true }],
   pad: [{ required: true }],
   drop: [{ required: true }, { number: true }, { validator: (val: number) => val >= 0 }],
   ivEncode: [{ required: true }],
@@ -200,11 +203,13 @@ const PAD_OPTIONS = computed(() => {
     case 'rsa': {
       return [
         { value: 'rsa-oaep', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaep') },
-        { value: 'rsa-oaep-sha256', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha256') },
-        { value: 'rsa-oaep-sha384', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha384') },
-        { value: 'rsa-oaep-sha512', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha512') },
-        { value: 'rsa-oaep-md5', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepMd5') },
+        // { value: 'rsa-oaep-sha224', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha224') },
+        // { value: 'rsa-oaep-sha256', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha256') },
+        // { value: 'rsa-oaep-sha384', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha384') },
+        // { value: 'rsa-oaep-sha512', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepSha512') },
+        // { value: 'rsa-oaep-md5', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaOaepMd5') },
         { value: 'rsaes-pkcs1-v1_5', label: t('pages.lab.crypto.encrypt.field.paddingMap.rsaesPkcs1') },
+        // { value: 'nopadding', label: t('pages.lab.crypto.encrypt.field.paddingMap.noPadding') },
       ];
     }
     case 'sm4': {
@@ -227,6 +232,11 @@ const PAD_OPTIONS = computed(() => {
 });
 const MODE_OPTIONS = computed(() => {
   switch (active.value.action) {
+    case 'rsa':
+      return [
+        { value: 0, label: t('pages.lab.crypto.encrypt.field.rsaModeMap.standard') },
+        { value: 1, label: t('pages.lab.crypto.encrypt.field.rsaModeMap.nonStandard') },
+      ];
     case 'sm4':
       return [
         { value: 'cbc', label: t('pages.lab.crypto.encrypt.field.modeMap.cbc') },
@@ -257,12 +267,11 @@ const ENCODE_OPTIONS = computed(() => [
   { value: 'base64', label: t('pages.lab.crypto.encrypt.field.encodeMap.base64') },
   { value: 'hex', label: t('pages.lab.crypto.encrypt.field.encodeMap.hex') },
 ]);
-
 const formRef = useTemplateRef<FormInstanceFunctions>('formRef');
 
 const formData = ref({
   input: '',
-  mode: 'cbc',
+  mode: 0 as string | number,
   pad: 'rsa-oaep',
   iv: '',
   key: '',
@@ -297,6 +306,9 @@ const defaultConf = () => {
 
   if (!PAD_OPTIONS.value.some((item) => item.value === formData.value.pad)) {
     formData.value.pad = PAD_OPTIONS.value[0].value;
+  }
+  if (!MODE_OPTIONS.value.some((item) => item.value === formData.value.mode)) {
+    formData.value.mode = MODE_OPTIONS.value[0].value;
   }
 };
 
@@ -338,7 +350,7 @@ const handleExecute = () => {
 
     let doc: Record<string, any> = { src: input, inputEncode, outputEncode };
     if (action === 'rsa') {
-      doc = { ...doc, key, pad, passphrase, passphraseEncode };
+      doc = { ...doc, key, pad, passphrase, passphraseEncode, type: mode };
     } else if (action === 'rc4') {
       doc = { ...doc, key, keyEncode };
     } else if (action === 'rc4Drop') {

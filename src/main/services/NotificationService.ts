@@ -1,3 +1,5 @@
+import { windowService } from '@main/services/WindowService';
+import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import type { INotification } from '@shared/config/notification';
 import type { BrowserWindow } from 'electron';
 import { Notification as ElectronNotification } from 'electron';
@@ -19,8 +21,8 @@ class NotificationService {
     });
 
     electronNotification.on('click', () => {
-      this.window.show();
-      this.window.webContents.send('notification-click', notification);
+      windowService.showWindow(this.window);
+      this.window.webContents.send(IPC_CHANNEL.NOTIFICATION_CLICK, notification);
     });
 
     electronNotification.show();

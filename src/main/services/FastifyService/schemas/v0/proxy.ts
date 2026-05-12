@@ -1,9 +1,9 @@
-import { Schema } from '@main/types/server';
+import type { Static } from '@sinclair/typebox';
 import { Type } from '@sinclair/typebox';
 
-import { createHttpErrorResponseSchema, createHttpSuccessResponseSchema } from '../base';
+import { ResponseErrorSchema, ResponseSuccessSchema } from '../base';
 
-const TAG = '[proxy]work';
+const TAG = 'proxy';
 
 export const getSchema = {
   tags: [TAG],
@@ -14,14 +14,14 @@ export const getSchema = {
   }),
   response: {
     200: {
-      content: { 'text/html': { schema: Type.String() } },
-      description: 'Successful Operation',
+      content: {
+        'text/html': {
+          schema: Type.String({ description: 'Proxy cache content' }),
+        },
+      },
     },
-    400: createHttpErrorResponseSchema(Type.String(), { description: 'Parameter Verification Error' }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    400: ResponseErrorSchema,
+    500: ResponseErrorSchema,
   },
 };
 
@@ -41,12 +41,16 @@ export const setSchema = {
     ),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(Type.String({ description: 'proxy access url' }), {
-      description: 'Successful Operation',
-    }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: Type.Object(
+      {
+        ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+        data: Type.String({ description: 'proxy access url' }),
+      },
+      { description: 'Response schema for proxy cache set operation' },
+    ),
+    500: ResponseErrorSchema,
   },
 };
+
+export type GetProxyCacheRequest = Static<typeof getSchema.querystring>;
+export type SetProxyCacheRequest = Static<typeof setSchema.body>;

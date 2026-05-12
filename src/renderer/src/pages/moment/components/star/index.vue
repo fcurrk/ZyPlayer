@@ -189,7 +189,7 @@ const getStar = async (): Promise<number> => {
   const { pageIndex, pageSize } = pagination.value;
 
   const resp = await fetchStarPage({
-    page: pageIndex,
+    pageNum: pageIndex,
     pageSize,
     type: [1, 2, 3],
   });

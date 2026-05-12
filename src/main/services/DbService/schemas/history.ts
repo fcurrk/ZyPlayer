@@ -1,4 +1,4 @@
-import { randomUUID } from '@shared/modules/crypto';
+import { randomUUID } from '@zy/crypto';
 import type { InferSelectModel } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';

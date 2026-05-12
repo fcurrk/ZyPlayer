@@ -10,7 +10,10 @@ import { appLocale } from '@main/services/AppLocale';
 import { configManager } from '@main/services/ConfigManager';
 import { dbService } from '@main/services/DbService';
 import { fastifyService } from '@main/services/FastifyService';
-import { terminate as filmCmsTerminate } from '@main/services/FastifyService/routes/v1/film/cms/utils/cache';
+import {
+  setup as filmCmsSetup,
+  terminate as filmCmsTerminate,
+} from '@main/services/FastifyService/routes/v1/film/cms/utils/cache';
 import { fileStorage } from '@main/services/FileStorage';
 import { menuService } from '@main/services/MenuService';
 import { pluginService } from '@main/services/PluginService';
@@ -28,6 +31,7 @@ import { isBoolean, isHttp } from '@shared/modules/validate';
 import type { IAuthCacheProgress, IAuthCert, IAuthRelayPayload } from '@shared/types/auth';
 import { app, BrowserWindow, crashReporter, ipcMain } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
+import fixPath from 'fix-path';
 
 const logger = loggerService.withContext(LOG_MODULE.MAIN);
 
@@ -61,6 +65,8 @@ const setupEnv = () => {
       logger.error(`Unhandled Rejection at: ${promise} reason: ${reason}`);
     });
   }
+
+  fixPath(); // fix environment
 };
 
 /**
@@ -321,6 +327,7 @@ const main = async () => {
     setupReady();
 
     runFunction(() => {
+      filmCmsSetup();
       pluginService.autoLaunch();
     });
   }

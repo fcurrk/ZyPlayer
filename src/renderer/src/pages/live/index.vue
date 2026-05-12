@@ -191,7 +191,7 @@ const resetPagination = () => {
 const getSetting = async () => {
   try {
     const resp = await fetchIptvActive();
-    if (resp?.default) {
+    if (resp?.default?.id) {
       config.value.default = resp.default;
       active.value.nav = resp.default.id;
     }
@@ -199,7 +199,7 @@ const getSetting = async () => {
     if (resp?.extra) config.value.extra = resp.extra;
 
     active.value.loadStatus =
-      resp?.default && resp.list.length ? 'complete' : resp.list.length ? 'noSelect' : 'noConfig';
+      resp?.default?.id && resp.list.length ? 'complete' : resp.list.length ? 'noSelect' : 'noConfig';
   } catch (error) {
     console.error(`Failed to get iptv config:`, error);
     active.value.loadStatus = 'error';
@@ -212,7 +212,7 @@ const getChannel = async (): Promise<number> => {
   const { pageIndex, pageSize } = pagination.value;
 
   const resp = await fetchChannelPage({
-    page: pageIndex,
+    pageNum: pageIndex,
     pageSize,
     kw: searchValue.value,
     group: active.value.class,
@@ -420,6 +420,7 @@ const defaultConfig = () => {
   resetPagination();
 
   searchValue.value = '';
+  emitter.emit(emitterChannel.SEARCH_RECOMMEND, { source: emitterSource.PAGE_SHOW, data: '' });
 
   active.value.lazyload = false;
   active.value.loadStatus = 'complete';

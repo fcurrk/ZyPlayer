@@ -31,7 +31,7 @@
         <span v-for="item in row.ext" :key="item.id">{{ item }}</span>
       </template>
       <template #op="slotProps">
-        <t-space>
+        <t-space size="small">
           <t-link theme="primary" @click="handleOperation('check', [slotProps.row.id])">
             {{ $t('common.check') }}
             <template v-if="slotProps.row.check" #prefix-icon>
@@ -155,7 +155,7 @@ const resetTable = () => {
 const fetchTable = async () => {
   try {
     const resp = await fetchAnalyzePage({
-      page: pagination.value.current,
+      pageNum: pagination.value.current,
       pageSize: pagination.value.pageSize,
       kw: searchValue.value,
     });
@@ -200,8 +200,12 @@ const updateItem = async (ids: string[], doc: Partial<IModels['analyze']>) => {
 
 const setDefaultItem = async (id: string) => {
   try {
-    await putAnalyzeDefault(id);
-    MessagePlugin.success(`${t('common.success')}`);
+    const resp = await putAnalyzeDefault(id);
+    if (resp.success) {
+      MessagePlugin.success(`${t('common.success')}`);
+    } else {
+      MessagePlugin.warning(`${t('common.fail')}`);
+    }
   } catch (error) {
     console.error('Fail to set default item', error);
     MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
@@ -224,7 +228,8 @@ const checkItem = async (ids: string[]) => {
 
         let isActive = false;
         try {
-          isActive = await fetchAnalyzeCheck(id);
+          const resp = await fetchAnalyzeCheck(id);
+          isActive = resp.success;
         } catch {
           // ignore error
         }

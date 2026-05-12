@@ -1,7 +1,7 @@
 import { request } from '@main/utils/request';
-import { base64 } from '@shared/modules/crypto';
 import { isJson } from '@shared/modules/validate';
 import type { ICmsParams, ICmsResultPromise, IConstructorOptions } from '@shared/types/cms';
+import { base64 } from '@zy/crypto';
 
 class T4ServerAdapter {
   private api: string = '';

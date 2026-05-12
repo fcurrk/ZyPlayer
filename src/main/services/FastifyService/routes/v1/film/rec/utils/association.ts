@@ -1,9 +1,9 @@
 import { loggerService } from '@logger';
 import { request } from '@main/utils/request';
 import { LOG_MODULE } from '@shared/config/logger';
-import { randomNanoid } from '@shared/modules/crypto';
 import { toUnix } from '@shared/modules/date';
 import { isArrayEmpty, isNil, isPositiveFiniteNumber, isStrEmpty, isString } from '@shared/modules/validate';
+import { randomNanoid } from '@zy/crypto';
 
 const logger = loggerService.withContext(LOG_MODULE.FILM_REC_HOT);
 

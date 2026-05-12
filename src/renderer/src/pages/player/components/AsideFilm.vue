@@ -45,9 +45,8 @@
 
           <div class="paction-item more">
             <t-dropdown trigger="click">
-              <t-button theme="default" shape="square" variant="text">
-                <more-icon />
-              </t-button>
+              <more-icon />
+
               <t-dropdown-menu>
                 <t-dropdown-item>
                   <div class="setting-item" @click="handleSettingDialog">
@@ -590,7 +589,7 @@ const handleSwitchLine = (id: string) => {
   active.value.filmSource = id;
 };
 
-const handleSwitchSeason = (item: ICmsInfoEpisode) => {
+const handleSwitchSeason = async (item: ICmsInfoEpisode) => {
   active.value.filmIndex = `${item.text}$${item.link}`;
   active.value.watch = false;
 
@@ -603,15 +602,15 @@ const handleSwitchSeason = (item: ICmsInfoEpisode) => {
     };
   }
 
-  callPlay(item);
+  await callPlay(item);
 };
 
-const handleSwitchParse = (id: string) => {
+const handleSwitchParse = async (id: string) => {
   active.value.analyzeId = id;
 
   if (active.value.filmIndex) {
     const [text, link] = active.value.filmIndex.split('$');
-    callPlay({ text, link });
+    await callPlay({ text, link });
   }
 };
 
@@ -626,7 +625,7 @@ const reverseOrderEvent = () => {
 const getAnalyzeConfig = async () => {
   try {
     const resp = await fetchAnalyzeActive();
-    if (resp?.default) {
+    if (resp?.default?.id) {
       analyzeConfig.value.default = resp.default;
       active.value.analyzeId = resp.default.id;
     }
@@ -947,12 +946,12 @@ const getEpisodePlayState = (): {
   return { currIndex: index, nextIndex, isLast, reverseOrder, currentInfo, nextInfo };
 };
 
-emitter.on(emitterChannel.COMP_MULTI_PLAYER_PLAYNEXT, () => {
+emitter.on(emitterChannel.COMP_MULTI_PLAYER_PLAYNEXT, async () => {
   const state = getEpisodePlayState();
   if (!isBoolean(state?.isLast) || isNil(state?.nextIndex) || state?.nextIndex === -1) return;
 
   const nextInfo = state.nextInfo;
-  handleSwitchSeason(nextInfo);
+  await handleSwitchSeason(nextInfo);
 });
 </script>
 <style lang="less" scoped></style>

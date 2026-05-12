@@ -4,9 +4,9 @@ import { dbService } from '@main/services/DbService';
 import { request } from '@main/utils/request';
 import { getTimeout } from '@main/utils/tool';
 import { SNIFFER_TYPE } from '@shared/config/setting';
-import { base64 } from '@shared/modules/crypto';
 import { headersPascalCase } from '@shared/modules/headers';
 import { isObject, isObjectEmpty, isStrEmpty, isString } from '@shared/modules/validate';
+import { base64 } from '@zy/crypto';
 
 export interface ISnifferMediaResult {
   url: string;

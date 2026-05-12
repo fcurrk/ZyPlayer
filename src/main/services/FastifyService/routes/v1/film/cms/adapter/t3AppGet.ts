@@ -1,7 +1,7 @@
 import { request } from '@main/utils/request';
-import { aes } from '@shared/modules/crypto';
 import { buildUrl } from '@shared/modules/headers';
 import type { ICmsParams, ICmsResultPromise, IConstructorOptions } from '@shared/types/cms';
+import { aes } from '@zy/crypto';
 
 class T3AppGetAdapter {
   private host: string = '';

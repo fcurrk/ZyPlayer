@@ -1,5 +1,5 @@
-import { randomUUID } from '@shared/modules/crypto';
 import { isArray, isArrayEmpty } from '@shared/modules/validate';
+import { randomUUID } from '@zy/crypto';
 import { estimateTokenCount } from 'tokenx';
 
 export interface ChatMessage {

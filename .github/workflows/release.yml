@@ -25,26 +25,45 @@ on:
     branches:
       - main
     types:
-      - opened
-      - synchronize
+      - closed
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+      - name: Get release tag
+        id: get-tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            BRANCH="${{ github.event.pull_request.head.ref }}"
+            echo "tag=${BRANCH#release/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs:
+      - prepare
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: ${{ fromJSON(
-          github.event_name == 'push' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
-          github.event_name == 'pull_request_target' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
-          github.event.inputs.platform == 'all' && '["macos-latest", "windows-latest", "ubuntu-latest"]' ||
+          github.event_name == 'push' && '["macos-latest", "windows-latest", "windows-11-arm", "ubuntu-latest"]' ||
+          github.event_name == 'pull_request_target' && '["macos-latest", "windows-latest", "windows-11-arm", "ubuntu-latest"]' ||
+          github.event.inputs.platform == 'all' && '["macos-latest", "windows-latest", "windows-11-arm", "ubuntu-latest"]' ||
           github.event.inputs.platform == 'linux' && '["ubuntu-latest"]' ||
-          github.event.inputs.platform == 'windows' && '["windows-latest"]' ||
+          github.event.inputs.platform == 'windows' && '["windows-latest", "windows-11-arm"]' ||
           github.event.inputs.platform == 'mac' && '["macos-latest"]' ||
-          '["macos-latest", "windows-latest", "ubuntu-latest"]'
+          '["macos-latest", "windows-latest", "windows-11-arm", "ubuntu-latest"]'
           ) }}
       fail-fast: false
 
@@ -55,24 +74,10 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || '' }}
 
-      - name: Get release tag
-        id: get-tag
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            # Extract version from branch name (release/v1.0.0 -> v1.0.0)
-            BRANCH="${{ github.event.pull_request.head.ref }}"
-            echo "tag=${BRANCH#release/}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Set package.json version
         shell: bash
         run: |
-          TAG="${{ steps.get-tag.outputs.tag }}"
+          TAG="${{ needs.prepare.outputs.tag }}"
           VERSION="${TAG#v}"
           npm version "$VERSION" --no-git-tag-version --allow-same-version
 
@@ -87,7 +92,7 @@ jobs:
           brew install python-setuptools
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -121,19 +126,71 @@ jobs:
       - name: Build Mac
         if: matrix.os == 'macos-latest'
         run: |
-          sudo -H pip install setuptools
           pnpm build:mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Build Windows
+      - name: Build Windows(x64)
         if: matrix.os == 'windows-latest'
         run: |
-          pnpm build:win
+          pnpm build:win:x64
+          mv dist/latest.yml dist/latest-win-x64.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
+
+      - name: Build Windows(arm64)
+        if: matrix.os == 'windows-11-arm'
+        run: |
+          pnpm build:win:arm64
+          mv dist/latest.yml dist/latest-win-arm64.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: zyfun-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.snap
+            dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
+            dist/latest*.yml
+
+  publish:
+    needs:
+      - prepare
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Merge Windows latest.yml
+        if: hashFiles('dist/latest-win-x64.yml') != '' && hashFiles('dist/latest-win-arm64.yml') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+
+          yq eval-all '
+            select(fileIndex == 0) as $x64 |
+            select(fileIndex == 1) as $arm |
+            $x64 |
+            .files = (($x64.files // []) + ($arm.files // []))
+          ' dist/latest-win-x64.yml dist/latest-win-arm64.yml > dist/latest.yml
+          rm -f dist/latest-win-x64.yml dist/latest-win-arm64.yml
 
       - name: Release
         uses: ncipollo/release-action@v1
@@ -141,6 +198,6 @@ jobs:
           draft: true
           allowUpdates: true
           makeLatest: false
-          tag: ${{ steps.get-tag.outputs.tag }}
+          tag: ${{ needs.prepare.outputs.tag }}
           artifacts: 'dist/*.exe,dist/*.dmg,dist/*.AppImage,dist/*.snap,dist/*.deb,dist/*.rpm,dist/*.tar.gz,dist/latest*.yml'
           token: ${{ secrets.GITHUB_TOKEN }}

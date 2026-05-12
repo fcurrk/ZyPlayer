@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import type { ISiteType } from '@shared/config/film';
 import { SITE_API_MAP, SITE_TYPE } from '@shared/config/film';
-import { randomUUID } from '@shared/modules/crypto';
+import { randomUUID } from '@zy/crypto';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { computed, ref, useTemplateRef, watch } from 'vue';

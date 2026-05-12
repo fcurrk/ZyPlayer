@@ -153,8 +153,8 @@
 import { APP_NAME } from '@shared/config/appinfo';
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { WINDOW_NAME } from '@shared/config/window';
-import { generateStrUUID } from '@shared/modules/crypto';
 import { isSecurityScheme } from '@shared/modules/validate';
+import { generateStrUUID } from '@zy/crypto';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

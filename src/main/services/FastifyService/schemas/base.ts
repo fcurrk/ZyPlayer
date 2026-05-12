@@ -1,4 +1,4 @@
-import type { ObjectOptions as TObjectOptions, TObject, TProperties, TSchema } from '@sinclair/typebox';
+import type { TObject, TProperties } from '@sinclair/typebox';
 import { Type } from '@sinclair/typebox';
 
 /**
@@ -32,69 +32,65 @@ export const Nullable = <T extends TObject>(schema: T) =>
     { ...schema, properties: undefined },
   );
 
-/**
- * Generic HTTP response schema constructor
- */
-const createHttpResponseSchema = <T extends TSchema = any>(
-  code: number,
-  msgSchema: TSchema,
-  dataSchema?: T,
-  options?: TObjectOptions,
-) =>
-  Type.Object(
-    {
-      code: Type.Literal(code, { format: 'int32', example: code }),
-      msg: msgSchema,
-      data: Type.Optional(
-        dataSchema ? Type.Union([dataSchema, Type.Null()]) : Type.Any({ description: 'response data' }),
-      ),
-    },
-    options,
-  );
-
-/**
- * HTTP success/error/redirect response schema
- */
-export const createHttpSuccessResponseSchema = <T extends TSchema = any>(dataSchema?: T, options?: TObjectOptions) =>
-  createHttpResponseSchema(ResponseCode.SUCCESS, Type.Literal('ok'), dataSchema, options);
-
-export const createHttpErrorResponseSchema = <T extends TSchema = any>(dataSchema?: T, options?: TObjectOptions) =>
-  createHttpResponseSchema(ResponseCode.ERROR, Type.String(), dataSchema, options);
-
-export const createHttpRedirectResponseSchema = () =>
-  Type.Object({ headers: Type.Object({ location: Type.String({ format: 'uri' }) }) }, { additionalProperties: false });
-
-/**
- * Predefined Response Modes
- */
-export const HttpSuccessResponseSchema = createHttpSuccessResponseSchema();
-export const HttpErrorResponseSchema = createHttpErrorResponseSchema();
-export const HttpRedirectResponseSchema = createHttpRedirectResponseSchema();
-
-/**
- * Generic response schema
- */
-export const ResponseSchema = {
-  200: HttpSuccessResponseSchema,
-  301: HttpRedirectResponseSchema,
-  302: HttpRedirectResponseSchema,
-  400: HttpErrorResponseSchema,
-  500: HttpErrorResponseSchema,
+export const PageQuery = {
+  pageNum: Type.Integer({ minimum: 1, default: 1, description: 'Page number' }),
+  pageSize: Type.Integer({ minimum: 1, default: 10, description: 'Page size' }),
 };
 
-/**
- * Create a routing schema with standard responses
- */
-export const createRouteSchema = <T extends TSchema = TSchema, R extends TSchema = TSchema>(
-  requestSchema?: T,
-  responseDataSchema?: R,
-) => ({
-  ...(requestSchema ? { body: requestSchema } : {}),
-  response: {
-    200: createHttpSuccessResponseSchema(responseDataSchema),
-    301: HttpRedirectResponseSchema,
-    302: HttpRedirectResponseSchema,
-    400: createHttpErrorResponseSchema(responseDataSchema),
-    500: createHttpErrorResponseSchema(responseDataSchema),
+export const ResponseSchema = Type.Object(
+  {
+    code: Type.Number({
+      enum: [ResponseCode.SUCCESS, ResponseCode.ERROR],
+      format: 'int32',
+      description: 'Response operation code',
+    }),
+    data: Type.Optional(Type.Any({ description: 'Response data' })),
+    msg: Type.String({ description: 'Response message' }),
   },
-});
+  {
+    additionalProperties: false,
+    description: 'Standard response format',
+  },
+);
+
+export const ResponseSuccessSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSchema, ['code', 'msg']).properties,
+    code: Type.Literal(ResponseCode.SUCCESS, {
+      format: 'int32',
+      example: ResponseCode.SUCCESS,
+    }),
+    msg: Type.Literal('ok'),
+  },
+  {
+    additionalProperties: false,
+    description: 'Standard success response format',
+  },
+);
+
+export const ResponseErrorSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSchema, ['code', 'msg']).properties,
+    code: Type.Literal(ResponseCode.ERROR, {
+      format: 'int32',
+      example: ResponseCode.ERROR,
+    }),
+    msg: Type.String({ description: 'Error message' }),
+  },
+  {
+    additionalProperties: false,
+    description: 'Standard error response format',
+  },
+);
+
+export const ResponseRedirectSchema = Type.Object(
+  {
+    headers: Type.Object({
+      location: Type.String({ format: 'uri' }),
+    }),
+  },
+  {
+    additionalProperties: false,
+    description: 'Standard redirect response format',
+  },
+);

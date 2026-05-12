@@ -375,4 +375,5 @@ export interface ICmsAdapterConstructor {
   new (...args: any[]): ICmsAdapter;
   prepare?: () => Promise<void> | void;
   terminate?: () => Promise<void> | void;
+  setup?: () => Promise<void> | void;
 }

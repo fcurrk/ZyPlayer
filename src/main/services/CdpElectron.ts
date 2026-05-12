@@ -2,10 +2,10 @@ import { loggerService } from '@logger';
 import { windowService } from '@main/services/WindowService';
 import { getTimeout, getUserAgent } from '@main/utils/tool';
 import { LOG_MODULE } from '@shared/config/logger';
-import { randomUUID } from '@shared/modules/crypto';
 import { headersPascalCase } from '@shared/modules/headers';
 import { toString } from '@shared/modules/toString';
 import { isHttp, isNil, isObjectEmpty, isPositiveFiniteNumber, isStrEmpty, isString } from '@shared/modules/validate';
+import { randomUUID } from '@zy/crypto';
 import type { BrowserWindow } from 'electron';
 import { app } from 'electron';
 import type {
@@ -83,7 +83,7 @@ export class CdpElectron {
     this.win = null;
   }
 
-  private reasonUserAgentMetadata(userAgent: string) {
+  private parseUserAgentMetadata(userAgent: string) {
     const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
 
     return {
@@ -109,7 +109,7 @@ export class CdpElectron {
       // await page.setUserAgent(ua); // @deprecated api
       await page.setUserAgent({
         userAgent,
-        userAgentMetadata: this.reasonUserAgentMetadata(userAgent),
+        userAgentMetadata: this.parseUserAgentMetadata(userAgent),
       });
 
       delete h['User-Agent'];

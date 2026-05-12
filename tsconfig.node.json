@@ -13,11 +13,13 @@
     "src/main/services/FastifyService/routes/v1/film/cms/adapter/t3AppGet.ts",
   ],
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "composite": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo/tsconfig.node.tsbuildinfo",
     "moduleResolution": "bundler",
-    "types": ["electron-vite/node", "vitest/globals"],
+    "noEmit": true,
     "paths": {
       "@main/*": ["./src/main/*"],
       "@preload/*": ["./src/preload/*"],
@@ -28,8 +30,8 @@
       "@logger": ["./src/main/services/LoggerService"],
       "@pkg": ["./package.json"]
     },
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "tsBuildInfoFile": ".tsbuildinfo/tsconfig.node.tsbuildinfo",
+    "types": ["electron-vite/node", "vitest/globals"],
     "useDefineForClassFields": true
   }
 }

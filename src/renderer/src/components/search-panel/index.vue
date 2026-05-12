@@ -295,7 +295,8 @@ const getSuggestList = async () => {
   associationConfig.value.load = true;
 
   try {
-    const kw = searchValue.value.trim();
+    const kw = searchValue.value?.trim();
+    if (!kw) return;
 
     const resp = await fetchRecAssociation({
       kw,
@@ -316,7 +317,7 @@ const throttleGetSuggestList = throttle(getSuggestList, 1000, { edges: ['leading
 const getHistoryConfig = async () => {
   try {
     const resp = await fetchHistoryPage({
-      page: 1,
+      pageNum: 1,
       pageSize: MAX_HISTORY_SIZE,
       type: [5],
     });
@@ -413,7 +414,7 @@ const reloadConfig = async ({ data: eventData }) => {
 };
 
 const reloadKwConfig = async ({ data: eventData }) => {
-  const { source, data: kw } = eventData;
+  const { source, data: kw = '' } = eventData;
   if (source === emitterSource.LAYOUT_HEADER_SEARCH) return;
 
   searchValue.value = kw;

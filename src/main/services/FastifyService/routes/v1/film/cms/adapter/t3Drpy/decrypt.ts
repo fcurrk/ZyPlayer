@@ -1,4 +1,4 @@
-import { aes, base64, gzip, rsa } from '@shared/modules/crypto';
+import { aes, base64, gzip, rsa } from '@zy/crypto';
 
 const removeHeader = (content: string, options: { mode?: string; fileType: string }): string => {
   const { mode = 'header-only', fileType } = options;

@@ -1,32 +1,71 @@
-import { Schema } from '@main/types/server';
 import { LEVEL, LOG_MODULE } from '@shared/config/logger';
 import { reqEncodes, reqMethods } from '@shared/config/req';
+import type { Static } from '@sinclair/typebox';
 import { Type } from '@sinclair/typebox';
 
-import {
-  createHttpErrorResponseSchema,
-  createHttpRedirectResponseSchema,
-  createHttpSuccessResponseSchema,
-} from '../../base';
+import { ResponseErrorSchema, ResponseRedirectSchema, ResponseSuccessSchema } from '../../base';
 
-const API_PREFIX = '[system]other';
+const API_PREFIX = 'system';
+
+const HealthSchmea = Type.Object({
+  timestamp: Type.Integer({ format: 'int64', description: 'timestamp' }),
+  version: Type.String({ description: 'version' }),
+});
+
+const HealthResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: Type.Partial(HealthSchmea),
+  },
+  { description: 'Response schema for health' },
+);
+
+const IpSchema = Type.Object({
+  ip: Type.Union([Type.String({ format: 'ipv4' }), Type.String({ format: 'ipv6' }), Type.String()], {
+    description: 'ip address',
+  }),
+  version: Type.Integer({ enum: [4, 6, -1], format: 'int32', description: 'ip version' }),
+  valid: Type.Boolean({ description: 'ip valid' }),
+  location: Type.Partial(
+    Type.Object({
+      country: Type.String({ description: 'country' }),
+      region: Type.String({ description: 'region' }),
+      city: Type.String({ description: 'city' }),
+      isp: Type.String({ description: 'isp' }),
+      isChinaMainland: Type.Boolean({ description: 'valid location in china mainland' }),
+    }),
+  ),
+});
+
+const IpResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: Type.Partial(IpSchema),
+  },
+  { description: 'Response schema for ip' },
+);
+
+const RequestSchmea = Type.Object({
+  code: Type.Integer({ format: 'int32', description: 'response code' }),
+  data: Type.Any({ description: 'response data' }),
+  headers: Type.Optional(Type.Record(Type.String(), Type.Any(), { description: 'response headers' })),
+});
+
+const RequestResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: Type.Partial(RequestSchmea),
+  },
+  { description: 'Response schema for request' },
+);
 
 export const healthSchema = {
   tags: [API_PREFIX],
   summary: 'Get server health',
   description: 'Server health.',
   response: {
-    200: createHttpSuccessResponseSchema(
-      Type.Object({
-        timestamp: Type.Integer({ format: 'int64', description: 'timestamp' }),
-        version: Type.String({ description: 'version' }),
-      }),
-      { description: 'Successful Operation' },
-    ),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: HealthResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
@@ -34,31 +73,16 @@ export const ipSchema = {
   tags: [API_PREFIX],
   summary: 'Get server ip',
   description: 'Server ip address.',
-  querystring: Type.Object({
-    preferIPv6: Type.Optional(Type.Boolean({ description: 'Whether to prefer IPv6 address, default is true' })),
-  }),
-  response: {
-    200: createHttpSuccessResponseSchema(
+  querystring: Type.Optional(
+    Type.Partial(
       Type.Object({
-        ip: Type.Union([Type.String({ format: 'ipv4' }), Type.String({ format: 'ipv6' }), Type.String()], {
-          description: 'ip address',
-        }),
-        version: Type.Integer({ enum: [4, 6, -1], format: 'int32', description: 'ip version' }),
-        valid: Type.Boolean({ description: 'ip valid' }),
-        location: Type.Object({
-          country: Type.Optional(Type.String({ description: 'country' })),
-          region: Type.Optional(Type.String({ description: 'region' })),
-          city: Type.Optional(Type.String({ description: 'city' })),
-          isp: Type.Optional(Type.String({ description: 'isp' })),
-          isChinaMainland: Type.Optional(Type.Boolean({ description: 'valid location in china mainland' })),
-        }),
+        preferIPv6: Type.Boolean({ description: 'Whether to prefer IPv6 address, default is true' }),
       }),
-      { description: 'Successful Operation' },
     ),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+  ),
+  response: {
+    200: IpResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
@@ -68,7 +92,7 @@ export const reqSchema = {
   description: 'same as axios request.',
   body: Type.Object({
     url: Type.String({ format: 'uri', description: 'request url' }),
-    method: Type.String({ enum: reqMethods, description: 'request method' }),
+    method: Type.String({ enum: reqMethods, default: 'GET', description: 'request method' }),
     headers: Type.Optional(Type.Record(Type.String(), Type.Any(), { description: 'request headers' })),
     data: Type.Optional(Type.Any({ description: 'request data' })),
     params: Type.Optional(Type.Record(Type.String(), Type.Any(), { description: 'request params' })),
@@ -76,17 +100,8 @@ export const reqSchema = {
     encode: Type.Optional(Type.String({ enum: reqEncodes, description: 'encoding format' })),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(
-      Type.Object({
-        code: Type.Integer({ format: 'int32', description: 'response code' }),
-        data: Type.Any({ description: 'response data' }),
-        headers: Type.Optional(Type.Record(Type.String(), Type.Any(), { description: 'response headers' })),
-      }),
-    ),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: RequestResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
@@ -107,12 +122,9 @@ export const m3u8AdRemoveSchema = {
       },
       description: 'Successful Operation',
     },
-    302: createHttpRedirectResponseSchema(),
-    400: createHttpErrorResponseSchema(Type.String(), { description: 'Parameter Verification Error' }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    302: ResponseRedirectSchema,
+    400: ResponseErrorSchema,
+    500: ResponseErrorSchema,
   },
 };
 
@@ -120,12 +132,16 @@ export const logSchema = {
   tags: [API_PREFIX],
   summary: 'Get log',
   description: 'Get log by type and level, default is all',
-  querystring: Type.Object({
-    type: Type.Optional(
-      Type.String({ description: `log type(comma split), allowed values: ${Object.values(LOG_MODULE).join(', ')}` }),
+  querystring: Type.Optional(
+    Type.Partial(
+      Type.Object({
+        type: Type.String({
+          description: `log type(comma split), allowed values: ${Object.values(LOG_MODULE).join(', ')}`,
+        }),
+        level: Type.Optional(Type.String({ enum: Object.values(LEVEL), description: 'log level' })),
+      }),
     ),
-    level: Type.Optional(Type.String({ enum: Object.values(LEVEL), description: 'log level' })),
-  }),
+  ),
   response: {
     200: {
       content: {
@@ -142,11 +158,13 @@ export const logSchema = {
           ]),
         },
       },
-      description: 'Successful Operation',
+      description: 'log stream',
     },
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    500: ResponseErrorSchema,
   },
 };
+
+export type SystemIpQuery = Static<typeof ipSchema.querystring>;
+export type SystemReqBody = Static<typeof reqSchema.body>;
+export type SystemM3u8AdRemoveQuery = Static<typeof m3u8AdRemoveSchema.querystring>;
+export type SystemLogQuery = Static<typeof logSchema.querystring>;

@@ -92,8 +92,8 @@
 <script setup lang="ts">
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
 import { IPTV_TYPE } from '@shared/config/live';
-import { randomUUID } from '@shared/modules/crypto';
 import { isArray, isArrayEmpty } from '@shared/modules/validate';
+import { randomUUID } from '@zy/crypto';
 import { InfoCircleIcon } from 'tdesign-icons-vue-next';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';

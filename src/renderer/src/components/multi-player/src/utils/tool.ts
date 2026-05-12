@@ -1,5 +1,6 @@
 import { convertStandardToUri, convertWebToElectron, isSafeHeader, removeUnSafeHeaders } from '@shared/modules/headers';
 import singleton from '@shared/modules/singleton';
+import { fileTypeFromBuffer } from 'file-type';
 
 import { sendRecBarrage } from '@/api/film';
 import { normalRequest } from '@/utils/request';
@@ -60,7 +61,17 @@ const mediaUtils = (() => {
    * 包含视频、音频和流媒体格式的常见MIME类型
    */
   const MIME_TO_EXTENSION: Readonly<Record<string, string>> = {
-    // 视频格式
+    // HLS
+    'application/vnd.apple.mpegurl': 'm3u8',
+    'application/x-mpegURL': 'm3u8',
+    'audio/mpegurl': 'm3u8',
+    'audio/x-mpegurl': 'm3u8',
+    // 'application/octet-stream': 'm3u8', // 常见于HLS流
+
+    // DASH
+    'application/dash+xml': 'mpd',
+
+    // 视频
     'video/mp4': 'mp4',
     'video/quicktime': 'mov',
     'video/x-matroska': 'mkv',
@@ -72,13 +83,7 @@ const mediaUtils = (() => {
     'video/ogg': 'ogv', // 更正视频OGG的标准扩展名
     'video/webm': 'webm',
 
-    // 流媒体格式
-    'application/vnd.apple.mpegurl': 'm3u8',
-    'application/x-mpegURL': 'm3u8',
-    'application/dash+xml': 'mpd',
-    'application/octet-stream': 'm3u8', // 常见于HLS流
-
-    // 音频格式
+    // 音频
     'audio/mpeg': 'mp3',
     'audio/wav': 'wav',
     'audio/x-wav': 'wav',
@@ -87,9 +92,9 @@ const mediaUtils = (() => {
     'audio/flac': 'flac',
     'audio/x-m4a': 'm4a',
 
-    // 现代格式
+    // 其他
     'video/mp2t': 'ts', // MPEG传输流
-    'application/vnd.ms-sstr+xml': 'ism', // Smooth Streaming
+    // 'application/vnd.ms-sstr+xml': 'ism',
   };
 
   // 反向映射：扩展名到内容类型
@@ -121,7 +126,7 @@ const mediaUtils = (() => {
   /**
    * 视频类型与播放器映射
    */
-  const extensionMapDecoder = (type: string): IDecoderType | undefined => {
+  const extensionMapDecoder = (type?: string): IDecoderType | undefined => {
     switch (type) {
       case 'hls':
       case 'm3u8':
@@ -159,42 +164,6 @@ const mediaUtils = (() => {
   };
 
   /**
-   * 检测媒体资源的实际类型
-   * @param {string} url - 媒体资源URL
-   * @param {Record<string, any>} headers - 请求头
-   * @returns {Promise<string | undefined>} 媒体类型标识符或undefined
-   */
-  const getStreamContentType = async (url: string, headers: Record<string, any> = {}): Promise<string | undefined> => {
-    const REQUEST_METHODS = ['HEAD', 'GET'];
-
-    const baseHeaders = {
-      ...convertWebToElectron(headers),
-      Range: 'bytes=0-1',
-      Accept: '*/*',
-    };
-
-    for (const method of REQUEST_METHODS) {
-      try {
-        const resp = await normalRequest.request({
-          url,
-          method,
-          headers: baseHeaders,
-        });
-
-        // 处理部分内容响应(206)和完整响应(200)
-        if (resp.status === 200 || resp.status === 206) {
-          const contentType = resp.headers['content-type']?.split(';')[0]?.trim();
-          if (contentType) return contentType;
-        }
-      } catch (error) {
-        console.error(`[mediaUtils][getMediaType][${method}][error]:`, error);
-      }
-    }
-
-    return undefined;
-  };
-
-  /**
    * 获取媒体流的内容类型并转换为文件扩展名
    * @param {string} url - 媒体资源URL
    * @param {Record<string, any>} headers - 请求头
@@ -204,19 +173,46 @@ const mediaUtils = (() => {
     url: string,
     headers: Record<string, any> = {},
   ): Promise<string | undefined> => {
-    const contentType = await getStreamContentType(url, headers);
-    if (!contentType) return undefined;
+    const REQUEST_METHODS = ['HEAD', 'GET'];
 
-    // video/mp4; charset=utf-8
-    // video/mp4
-    // video/mp4;
-    const formatContentType = contentType.includes(';') ? contentType.split(';')?.[0] : contentType;
-    const normalizedType = formatContentType?.trim()?.toLowerCase();
-    const mimeExtension = getExtensionFromMime(normalizedType);
+    for (const method of REQUEST_METHODS) {
+      try {
+        const resp = await normalRequest.request(
+          {
+            url,
+            method,
+            responseType: 'arraybuffer',
+            headers: {
+              ...convertWebToElectron(headers),
+              ...(method === 'GET' ? { Range: 'bytes=0-16' } : {}), // 8/12/16
+              Accept: '*/*',
+            },
+          },
+          { joinTime: false },
+        );
+        if (resp.status !== 200 && resp.status !== 206) continue;
 
-    if (!mimeExtension) return undefined;
+        const contentType = resp.headers['content-type']?.split(';')[0]?.trim()?.toLowerCase();
+        if (contentType) {
+          const mimeExtension = getExtensionFromMime(contentType);
+          if (mimeExtension) return mimeExtension;
+        }
 
-    return mimeExtension;
+        if (method === 'HEAD') continue;
+
+        if (resp.data && resp.data.byteLength > 0) {
+          const detected = await fileTypeFromBuffer(resp.data);
+          if (detected?.mime) {
+            const mimeExtension = getExtensionFromMime(detected.mime);
+            if (mimeExtension) return mimeExtension;
+          }
+        }
+      } catch (error) {
+        console.error(`[mediaUtils][getMediaType][${method}][error]:`, error);
+      }
+    }
+
+    return undefined;
   };
 
   /**
@@ -246,24 +242,12 @@ const mediaUtils = (() => {
     if (!isValidMediaUrl(url)) return undefined;
 
     // 1. 首先尝试从URL扩展名获取类型
-    const urlExtension = getFileExtension(url);
-    console.debug('[mediaUtils][checkMediaType] urlExtension:', urlExtension);
-    const urlDecoder = extensionMapDecoder(urlExtension);
-    console.debug('[mediaUtils][checkMediaType] urlDecoder:', urlDecoder);
-    if (urlDecoder) return urlExtension;
-
-    // 2. 如果扩展名无法确定，尝试从Content-Type获取
-    try {
-      const contentTypeExtension = await getStreamContentTypeToExtension(url, headers);
-      if (!contentTypeExtension) return undefined;
-
-      const mimeDecoder = extensionMapDecoder(contentTypeExtension);
-      if (mimeDecoder) return contentTypeExtension;
-
-      return undefined;
-    } catch (error) {
-      console.error(`[mediaUtils][checkMediaType][error]:`, error);
-    }
+    // 2. 如果扩展名无法确定，尝试从Content-Type/data获取
+    const extension = getFileExtension(url) || (await getStreamContentTypeToExtension(url, headers));
+    console.debug('[mediaUtils][checkMediaType] extension:', extension);
+    const decoder = extensionMapDecoder(extension);
+    console.debug('[mediaUtils][checkMediaType] decoder:', decoder);
+    if (decoder) return extension;
 
     return undefined;
   };
@@ -289,7 +273,6 @@ const mediaUtils = (() => {
     getFileExtension,
     getStreamContentTypeToExtension,
     getDecoderFromExtension,
-    getStreamContentType,
     isHEVCVideoSupported,
     isSafeHeader,
     isValidMediaUrl,

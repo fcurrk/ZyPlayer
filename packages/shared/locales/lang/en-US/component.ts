@@ -50,11 +50,15 @@ export default {
   terminal: {
     logger: {
       message: {
-        success: 'Logger module connected successfully',
+        success: 'Logger module connected success',
         fail: 'Logger module connection failed',
         error: 'Logger module encountered an error',
         noSupport: 'Current adapter does not support logging output',
       },
+    },
+    terminal: {
+      success: 'Terminal connected success',
+      error: 'Terminal connection encountered an error',
     },
   },
 };

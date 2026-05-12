@@ -1,15 +1,26 @@
 <template>
-  <div ref="terminalRef" class="terminal"></div>
+  <div
+    class="xterm-container"
+    :style="{
+      backgroundColor: themes[props.options.theme || 'XtermDark'].background,
+    }"
+  >
+    <div ref="terminalDivRef" class="xterm-content"></div>
+  </div>
 </template>
 <script lang="ts" setup>
 defineOptions({
-  name: 'Terminal',
+  name: 'XTerm',
 });
 
 const props = defineProps({
   options: {
-    type: Object as PropType<ITerminalOptions>,
+    type: Object as PropType<IXTermOptions>,
     default: () => ({}),
+  },
+  ws: {
+    type: String,
+    default: '',
   },
   console: {
     type: Boolean,
@@ -22,6 +33,10 @@ const props = defineProps({
   onLinkClickCallback: {
     type: Function as PropType<(uri: string) => void>,
     default: (_uri: string) => {},
+  },
+  onConnectionStatusChanged: {
+    type: Function as PropType<(status: ConnectionStatus) => void>,
+    default: (_status: ConnectionStatus) => {},
   },
 });
 
@@ -37,8 +52,8 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import type { ITerminalOptions } from '@xterm/xterm';
-import { Terminal } from '@xterm/xterm';
-import { throttle } from 'es-toolkit';
+import { Terminal as XTerm } from '@xterm/xterm';
+import { merge } from 'es-toolkit';
 import JSON5 from 'json5';
 import type { PropType } from 'vue';
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue';
@@ -46,40 +61,63 @@ import { SearchBarAddon } from 'xterm-addon-search-bar';
 
 import { isMacOS } from '@/utils/systeminfo';
 
+import themes from './utils/theme';
+
 export type { ITerminalOptions } from '@xterm/xterm';
+import { MessagePlugin } from 'tdesign-vue-next';
 
-export type ITerminal = Terminal;
-export type ITerminalLog = LogLevel;
-type ITerminalConsoleLog = Exclude<LogLevel, 'verbose' | 'silly' | 'none'> | 'log';
+import { t } from '@/locales';
 
-const terminalRef = useTemplateRef<HTMLElement>('terminalRef');
+export type IXTerm = XTerm;
+export type IXTermLog = LogLevel;
+export type IXTermTheme = 'XtermDark' | 'XtermLight';
+export type IXTermSearchTheme = 'XtermSearchDark' | 'XtermSearchLight';
+export type IXTermOptions = Omit<ITerminalOptions, 'theme'> & {
+  theme?: IXTermTheme;
+  searchTheme?: IXTermSearchTheme;
+};
+type ITerminalConsoleLog = Exclude<IXTermLog, 'verbose' | 'silly' | 'none'> | 'log';
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-const options = ref<ITerminalOptions>(props.options);
-const isSelecting = ref<boolean>(false);
+// terminal
+const terminalDivRef = useTemplateRef<HTMLElement>('terminalDivRef');
+const xtermInstance = ref<IXTerm | null>(null);
+const fitAddonRef = ref<FitAddon | null>(null);
+const searchbarAddonRef = ref<SearchBarAddon | null>(null);
+const terminalTextSelect = ref<boolean>(false);
 
-const term = ref<Terminal>();
-const termAddon = ref<{
-  fit: FitAddon;
-  search: SearchAddon;
-  searchBar: SearchBarAddon;
-  weblinks: WebLinksAddon;
-  webgl: WebglAddon;
-  unicode: Unicode11Addon;
-}>();
+// ws
+const websocketInstance = ref<WebSocket | null>(null);
+const connecting = ref(false);
+const connected = ref(false);
+const pingLooper = ref<number | null>(null);
 
-const resizeObserver = ref<ResizeObserver>();
-const visibleObserver = ref<IntersectionObserver>();
+// listen
+let resizeObserver: ResizeObserver | null = null;
 
 watch(
   () => props.options,
-  (val) => (options.value = val),
+  async (val) => {
+    if (xtermInstance.value) {
+      Object.assign(xtermInstance.value.options, {
+        ...val,
+        theme: { ...themes[val.theme || 'XtermDark'] },
+      });
+      xtermInstance.value.focus();
+      searchbarAddonRef.value?.applyTheme(themes[val.searchTheme || 'XtermSearchDark']);
+    } else {
+      await nextTick();
+      connectTerminal();
+    }
+  },
   { deep: true },
 );
 
 watch(
-  () => options.value,
-  (val) => {
-    if (term.value) Object.assign(term.value.options, val);
+  () => props.ws,
+  async () => {
+    await nextTick();
+    connectTerminal();
   },
   { deep: true },
 );
@@ -87,69 +125,218 @@ watch(
 onMounted(() => setup());
 onUnmounted(() => dispose());
 
-const setup = () => {
-  nextTick(() => {
-    const terminal = new Terminal(options.value);
+const isWebglSupported = (): boolean => {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+};
 
-    // addon
-    const fit = new FitAddon();
-    const search = new SearchAddon();
-    const searchBar = new SearchBarAddon({ searchAddon: search as any });
-    const unicode = new Unicode11Addon();
-    const weblinks = new WebLinksAddon((event, uri) => {
-      event.preventDefault();
+const buildWebSocketUrl = (rawUrl: string): string => {
+  if (!rawUrl) return rawUrl;
 
-      const modifierPressed = isMacOS ? event.metaKey : event.ctrlKey;
-      if (modifierPressed) props.onLinkClickCallback?.(uri);
-    });
-    const webgl = new WebglAddon();
+  if (rawUrl.startsWith('ws://') || rawUrl.startsWith('wss://')) return rawUrl;
 
-    terminal.loadAddon(fit);
-    terminal.loadAddon(weblinks);
-    terminal.loadAddon(webgl);
-    terminal.loadAddon(search);
-    terminal.loadAddon(searchBar as any);
-    terminal.loadAddon(unicode);
-    terminal.unicode.activeVersion = '11';
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    const normalized = new URL(rawUrl);
+    normalized.protocol = normalized.protocol === 'https:' ? 'wss:' : 'ws:';
+    return normalized.toString();
+  }
 
-    terminal.open(terminalRef.value!);
-    terminal.focus();
-    fit.fit();
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}${rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`}`;
+};
 
-    terminal.onKey((e: { key: string; domEvent: KeyboardEvent }) => {
-      const ev = e.domEvent;
-      const key = ev.key === 'Enter' ? '\n' : e.key;
+const emitConnectionStatus = () => {
+  props.onConnectionStatusChanged?.(connecting.value ? 'connecting' : connected.value ? 'connected' : 'disconnected');
+};
 
-      props.onKeyCallback?.(key);
-    });
+const connectWebSocket = () => {
+  connecting.value = true;
+  connected.value = false;
+  emitConnectionStatus();
 
-    terminal.onSelectionChange(() => {
-      isSelecting.value = terminal.hasSelection();
-    });
+  websocketInstance.value = new WebSocket(buildWebSocketUrl(props.ws));
 
-    terminalRef.value?.addEventListener('keydown', handleKeyDown, true);
+  websocketInstance.value.onopen = () => {
+    pingLooper.value = window.setInterval(() => {
+      if (websocketInstance.value && websocketInstance.value.readyState === WebSocket.OPEN) {
+        websocketInstance.value.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 5000);
+  };
 
-    // resize
-    const fitFn = throttle(() => fit.fit(), 100);
-    resizeObserver.value = new ResizeObserver(fitFn);
-    resizeObserver.value.observe(terminalRef.value!);
+  websocketInstance.value.onmessage = (event) => {
+    const data = JSON.parse(event.data);
 
-    visibleObserver.value = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) fit.fit();
-    });
-    visibleObserver.value.observe(terminalRef.value!);
+    if (data.type === 'data') {
+      xtermInstance.value?.write(data.data);
+    } else if (data.type === 'connected') {
+      MessagePlugin.success(t('component.terminal.terminal.success'));
 
-    // assign
-    term.value = terminal;
-    termAddon.value = { fit, search, searchBar, unicode, weblinks, webgl };
+      connecting.value = false;
+      connected.value = true;
+      emitConnectionStatus();
+
+      xtermInstance.value?.focus();
+      requestAnimationFrame(() => handleResize());
+    } else if (data.type === 'resize') {
+      const { col, row } = JSON.parse(data.data);
+      xtermInstance.value?.resize(col, row);
+    } else if (data.type === 'error') {
+      MessagePlugin.error(`t('common.error'): ${data.data}`);
+    }
+  };
+
+  websocketInstance.value.onclose = (event) => {
+    if (websocketInstance.value === event.target) {
+      connecting.value = false;
+      connected.value = false;
+      emitConnectionStatus();
+    }
+  };
+
+  websocketInstance.value.onerror = (event) => {
+    if (websocketInstance.value === event.target) {
+      connecting.value = false;
+      connected.value = false;
+      emitConnectionStatus();
+
+      MessagePlugin.error(t('component.terminal.terminal.error'));
+    }
+  };
+};
+
+const connectTerminal = () => {
+  resetTerminal();
+
+  xtermInstance.value = new XTerm(
+    merge(
+      {
+        allowProposedApi: true,
+        fontFamily: '"JetBrains Mono Variable", monospace',
+        fontSize: 12,
+      },
+      { ...props.options, ...{ theme: themes[props.options.theme || 'XtermDark'] } },
+    ),
+  );
+
+  xtermInstance.value.open(terminalDivRef.value!);
+
+  const fitAddon = new FitAddon();
+  fitAddonRef.value = fitAddon;
+
+  const unicode11Addon = new Unicode11Addon();
+  const webLinksAddon = new WebLinksAddon((event, uri) => {
+    event.preventDefault();
+    const isModifier = isMacOS ? event.metaKey : event.ctrlKey;
+    if (isModifier) props.onLinkClickCallback?.(uri);
   });
+  const search = new SearchAddon();
+  const searchBar = new SearchBarAddon({
+    searchAddon: search,
+    theme: themes[props.options.searchTheme || 'XtermSearchDark'],
+  });
+  searchbarAddonRef.value = searchBar;
+  xtermInstance.value.loadAddon(fitAddon);
+  if (isWebglSupported()) {
+    const webglAddon = new WebglAddon();
+    xtermInstance.value.loadAddon(webglAddon);
+  }
+
+  xtermInstance.value.loadAddon(search);
+  xtermInstance.value.loadAddon(searchBar);
+  xtermInstance.value.loadAddon(unicode11Addon);
+  xtermInstance.value.loadAddon(webLinksAddon);
+
+  fitAddonRef.value.fit();
+
+  xtermInstance.value.onKey((e: { key: string; domEvent: KeyboardEvent }) => {
+    const ev = e.domEvent;
+    const key = ev.key === 'Enter' ? '\n' : e.key;
+
+    props.onKeyCallback?.(key);
+  });
+
+  xtermInstance.value.onSelectionChange(() => {
+    terminalTextSelect.value = xtermInstance.value?.hasSelection() ?? false;
+  });
+
+  xtermInstance.value.onData((data) => {
+    if (websocketInstance.value && websocketInstance.value.readyState === WebSocket.OPEN) {
+      websocketInstance.value.send(
+        JSON.stringify({
+          type: 'data',
+          data,
+        }),
+      );
+    }
+  });
+
+  terminalDivRef.value?.addEventListener('keydown', handleKeyDown, true);
+
+  if (props.ws) connectWebSocket();
+};
+
+const handleResize = () => {
+  if (!xtermInstance.value) return;
+
+  fitAddonRef.value?.fit();
+
+  if (websocketInstance.value && websocketInstance.value.readyState === WebSocket.OPEN) {
+    websocketInstance.value.send(
+      JSON.stringify({
+        type: 'resize',
+        data: JSON.stringify({
+          row: xtermInstance.value.rows,
+          col: xtermInstance.value.cols,
+        }),
+      }),
+    );
+  }
+};
+
+const resetTerminal = () => {
+  if (xtermInstance.value) {
+    xtermInstance.value?.dispose();
+    xtermInstance.value = null;
+  }
+
+  if (websocketInstance.value) {
+    websocketInstance.value.close();
+    websocketInstance.value = null;
+  }
+
+  if (pingLooper.value) {
+    clearInterval(pingLooper.value);
+    pingLooper.value = null;
+  }
+
+  connecting.value = false;
+  connected.value = false;
+  emitConnectionStatus();
+};
+
+const clear = () => {
+  xtermInstance.value?.clear();
+  xtermInstance.value?.reset();
+};
+
+const focus = () => {
+  xtermInstance.value?.focus();
+  fitAddonRef.value?.fit();
 };
 
 const colorText = (text: string, color: string) => {
   return ANSICOLORS[color] + text + ANSICOLORS.END;
 };
 
-const write = (val: unknown, level: ITerminalLog = LEVEL.VERBOSE, ln: boolean = true, prefix?: string) => {
+const write = (val: unknown, level: IXTermLog = LEVEL.VERBOSE, ln: boolean = true, prefix?: string) => {
   let content = toString(val);
   if (isJsonStr(content)) content = JSON.stringify(JSON5.parse(content), null, 2);
 
@@ -166,11 +353,11 @@ const write = (val: unknown, level: ITerminalLog = LEVEL.VERBOSE, ln: boolean = 
 
   text = colorText(text, 'BOLD');
 
-  if (term.value) {
-    if (prefix) term.value.write(custom!);
-    ln ? term.value.writeln(text) : term.value.write(text);
+  if (xtermInstance.value) {
+    if (prefix) xtermInstance.value.write(custom!);
+    ln ? xtermInstance.value.writeln(text) : xtermInstance.value.write(text);
 
-    if (!isSelecting.value) term.value.scrollToBottom();
+    if (!terminalTextSelect.value) xtermInstance.value.scrollToBottom();
   }
 
   if (props.console) {
@@ -184,32 +371,31 @@ const write = (val: unknown, level: ITerminalLog = LEVEL.VERBOSE, ln: boolean = 
   }
 };
 
-const clear = () => {
-  term.value?.clear();
-  term.value?.reset();
+// 阻止误刷新/关闭页面导致终端会话中断
+const handleBeforeUnload = (event: BeforeUnloadEvent): string | void => {
+  if (connected.value) {
+    event.preventDefault();
+    event.returnValue = '';
+    return '';
+  }
+};
+
+const setup = async () => {
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+  await nextTick();
+  if (terminalDivRef.value) {
+    resizeObserver = new ResizeObserver(() => handleResize());
+    resizeObserver.observe(terminalDivRef.value);
+  }
+
+  connectTerminal();
 };
 
 const dispose = () => {
-  resizeObserver.value?.disconnect();
-  visibleObserver.value?.disconnect();
-
-  if (termAddon.value) {
-    Object.values(termAddon.value).forEach((addon) => addon?.dispose?.());
-  }
-  term.value?.dispose();
-
-  terminalRef.value?.removeEventListener('keydown', handleKeyDown, true);
-
-  term.value = undefined;
-  termAddon.value = undefined;
-
-  resizeObserver.value = undefined;
-  visibleObserver.value = undefined;
-};
-
-const focus = () => {
-  term.value?.focus();
-  termAddon.value?.fit?.fit();
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  resizeObserver?.disconnect();
+  resetTerminal();
 };
 
 const handleKeyDown = (ev: KeyboardEvent) => {
@@ -217,7 +403,7 @@ const handleKeyDown = (ev: KeyboardEvent) => {
 
   if ((isMacOS && ev.metaKey && key === 'f') || (!isMacOS && ev.ctrlKey && key === 'f')) {
     ev.preventDefault();
-    termAddon.value?.searchBar?.show();
+    searchbarAddonRef.value?.show();
   }
 
   if ((isMacOS && ev.metaKey && key === 'l') || (!isMacOS && ev.ctrlKey && key === 'l')) {
@@ -234,56 +420,14 @@ defineExpose({
 });
 </script>
 <style lang="less" scoped>
-.terminal {
+.xterm-container {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  padding: var(--td-pop-padding-l);
 
-  :deep(.xterm) {
+  .xterm-content {
+    width: 100%;
     height: 100%;
-    padding-left: var(--td-comp-paddingLR-s);
-
-    .xterm-scrollable-element {
-      height: 100%;
-      margin-left: calc(0px - var(--td-comp-paddingLR-s));
-      padding-left: var(--td-comp-paddingLR-s);
-    }
-
-    .xterm-viewport {
-      background-color: var(--td-bg-content-input-1) !important;
-    }
-  }
-
-  :deep(.xterm-search-bar__addon) {
-    box-shadow: var(--td-shadow-1);
-    background-color: var(--td-bg-color-component-hover);
-    transition: transform 200ms linear;
-    padding: var(--td-comp-paddingTB-xs) var(--td-comp-paddingLR-xs);
-
-    .search-bar__input {
-      background-color: var(--td-bg-color-component);
-      color: var(--td-text-color-primary);
-      border-radius: var(--td-radius-default);
-      border-width: 1px;
-      border-style: solid;
-      border-color: transparent;
-
-      &:focus {
-        outline: none;
-        border-color: var(--td-brand-color);
-        box-shadow: 0 0 0 1px var(--td-brand-color-focus);
-      }
-    }
-
-    .search-bar__btn {
-      background-color: transparent;
-      border-radius: var(--td-radius-default);
-      margin-left: var(--td-comp-margin-xs);
-
-      &.prev {
-        margin-left: var(--td-comp-margin-xs);
-      }
-    }
   }
 }
 </style>

@@ -49,7 +49,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { base64, gzip, hex, html, unicode, url } from '@shared/modules/crypto';
+import { base64, gzip, hex, html, unicode, url } from '@zy/crypto';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { ref, useTemplateRef, watch } from 'vue';

@@ -99,3 +99,64 @@ export const formatInfoContent = (val: string, key?: string): string => {
 
   return text;
 };
+
+/**
+ * Format the categories
+ * @param str - Text to be formatted
+ * @returns string[]
+ * @example
+ * // Input: "动作, 喜剧, 爱情, [科幻, 奇幻], 犯罪"
+ * // Output: ["动作", "喜剧", "爱情", "科幻, 奇幻", "犯罪"]
+ */
+export const formatCategories = (str: string): string[] => {
+  const result: string[] = [];
+  let buffer: string = '';
+  let depth: number = 0; // 是否在 [] 内（支持嵌套）
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    // 进入 [
+    if (char === '[') {
+      depth++;
+      if (depth === 1) {
+        if (buffer.trim()) {
+          result.push(buffer.trim());
+        }
+        buffer = '';
+        continue;
+      }
+    }
+
+    // 离开 ]
+    if (char === ']') {
+      depth--;
+      if (depth === 0) {
+        if (buffer.trim()) {
+          result.push(buffer.trim());
+        }
+        buffer = '';
+        continue;
+      }
+    }
+
+    // 只有在 [] 外部，逗号才是分隔符
+    if (depth === 0 && (char === ',' || char === '，')) {
+      if (buffer.trim()) {
+        result.push(buffer.trim());
+      }
+      buffer = '';
+      continue;
+    }
+
+    buffer += char;
+  }
+
+  // 收尾
+  if (buffer.trim()) {
+    result.push(buffer.trim());
+  }
+
+  // 去重
+  return [...new Set(result)];
+};

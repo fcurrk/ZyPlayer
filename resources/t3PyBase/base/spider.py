@@ -1,118 +1,98 @@
 # -*- coding: utf-8 -*-
 # File  : spider.py
-# Author: DaShenHan&道长-----先苦后甜，任凭晚风拂柳颜------
-# Author's Blog: https://blog.csdn.net/qq_32394351
-# Date  : 2024/1/9
-# UpDate  : 2024/1/9 增加多个静态函数以及个性化函数
-
-import hashlib
-import re
-import json
-import zlib
-import gzip
-from typing import List
-
-import requests
-import warnings
-import time
-from lxml import etree
-from abc import abstractmethod, ABCMeta
-from importlib.machinery import SourceFileLoader
-from urllib3 import encode_multipart_formdata
-from urllib.parse import urljoin, quote, unquote
 
 import base64
-import io
-import tokenize
 from Crypto.Cipher import AES, PKCS1_v1_5 as PKCS1_cipher
 from Crypto.Util.Padding import unpad
 from Crypto.PublicKey import RSA
+import gzip
+import hashlib
+import random
+import threading
+import zlib
+import uuid
 
-# 关闭警告
-warnings.filterwarnings("ignore")
-requests.packages.urllib3.disable_warnings()
+import string
+from typing import List
+
+from abc import abstractmethod, ABCMeta
+from importlib.machinery import SourceFileLoader
+import io
+from lxml import etree
+import json
+import os
+import re
+import requests
+import time
+import tokenize
+from urllib3 import encode_multipart_formdata
+from urllib.parse import urljoin, parse_qs, urlparse, quote, unquote
+
+from base.localProxy import Proxy
+
 
 class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
     _instance = None
 
-    def __init__(self, query_params=None, t4_api=None):
-        self.query_params = query_params or {}
-        self.t4_api = t4_api or ''
+    def __init__(self):
         self.extend = ''
         self._cache = {}
-        self.log(f'BaseSpider __init__ query_params:{query_params} t4_api:{t4_api}')
 
     def __new__(cls, *args, **kwargs):
         if cls._instance:
-            return cls._instance  # 有实例则直接返回
+            return cls._instance
         else:
-            cls._instance = super().__new__(cls)  # 没有实例则new一个并保存
-            return cls._instance  # 这个返回是给是给init，再实例化一次，也没有关系
-
-    # # 这是简化的写法，上面注释的写法更容易提现判断思路
-    # if not cls._instance:
-    #   cls._instance = super().__new__(cls)
-    # return cls._instance
+            cls._instance = super().__new__(cls)
+            return cls._instance
 
     @abstractmethod
     def init(self, extend=""):
         pass
 
-    @abstractmethod
     def homeContent(self, filter):
         pass
 
-    @abstractmethod
     def homeVideoContent(self):
         pass
 
-    @abstractmethod
     def categoryContent(self, tid, pg, filter, extend):
         pass
 
-    @abstractmethod
     def detailContent(self, ids):
         pass
 
-    @abstractmethod
     def searchContent(self, key, quick, pg=1):
         pass
 
-    @abstractmethod
     def playerContent(self, flag, id, vipFlags=None):
         pass
 
-    @abstractmethod
+    def liveContent(self, url):
+        pass
+
     def localProxy(self, params):
         pass
 
-    @abstractmethod
     def isVideoFormat(self, url):
         pass
 
-    @abstractmethod
     def manualVideoCheck(self):
         pass
 
-    # @abstractmethod
+    def action(self, action):
+        pass
+
+    def destroy(self):
+        pass
+
     def getName(self):
         return 'BaseSpider'
 
-    def init_api_ext_file(self):
-        pass
-
-    def getProxyUrl(self, flag=False):
-        """
-        获取本地代理地址
-        @return:
-        """
-        return self.t4_api
+    def getProxyUrl(self, local=False):
+        return f'{Proxy.getUrl(local)}?do=py'
 
     def getDependence(self):
         return []
-
-    def setExtendInfo(self, extend):
-        self.extend = extend
 
     def setCache(self, key, value, expire=None):
         """
@@ -150,6 +130,16 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
 
         return item['value']
 
+    def delCache(self, key):
+        """
+        删除缓存值
+
+        参数:
+            key: 缓存键
+        """
+        if key in self._cache:
+            del self._cache[key]
+
     def cleanup(self):
         """清理所有过期的缓存项"""
         current_time = time.time()
@@ -160,6 +150,27 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
 
         for key in expired_keys:
             del self._cache[key]
+
+    def Mproxy(self, url):
+        return self.getProxyUrl() + "&url=" + self.base64Encode(url) + "&type=a.m3u8"
+
+    def Mlocal(self, param, header=None):
+        url = self.d64(param["url"])
+        ydata = self.fetch(url, headers=header, allow_redirects=False)
+        data = ydata.content.decode('utf-8')
+        if ydata.headers.get('Location'):
+            url = ydata.headers['Location']
+            data = self.fetch(url, headers=header).content.decode('utf-8')
+        parsed_url = urlparse(url)
+        durl = parsed_url.scheme + "://" + parsed_url.netloc
+        lines = data.strip().split('\n')
+        for index, string in enumerate(lines):
+            if '#EXT' not in string and 'http' not in string:
+                last_slash_index = string.rfind('/')
+                lpath = string[:last_slash_index + 1]
+                lines[index] = durl + ('' if lpath.startswith('/') else '/') + lpath
+        data = '\n'.join(lines)
+        return [200, "application/vnd.apple.mpegur", data]
 
     def regStr(self, src, reg, group=1):
         m = re.search(reg, src)
@@ -176,8 +187,10 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         else:
             return [m.group(Index) for m in re.finditer(RegexText, Text, re.M | re.S)]
 
-    # cGroup = re.compile('[\U00010000-\U0010ffff]')
-    # clean = cGroup.sub('',rsp.text)
+    def removeHtmlTags(self, src):
+        clean = re.compile('<.*?>')
+        return re.sub(clean, '', src)
+
     def cleanText(self, src):
         clean = re.sub('[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]', '',
                        src)
@@ -191,17 +204,10 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         rsp.encoding = 'utf-8'
         return rsp
 
-    def post(self, url, data=None, headers=None, cookies=None, timeout=5, verify=True, allow_redirects=True,
-             stream=None):
-        rsp = requests.post(url, data=data, headers=headers, cookies=cookies, timeout=timeout, verify=verify,
-                            allow_redirects=allow_redirects, stream=stream)
-        rsp.encoding = 'utf-8'
-        return rsp
-
-    def postJson(self, url, json, headers=None, cookies=None, timeout=5, verify=True, allow_redirects=True,
-                 stream=None):
-        rsp = requests.post(url, json=json, headers=headers, cookies=cookies, timeout=timeout, verify=verify,
-                            allow_redirects=allow_redirects, stream=stream)
+    def post(self, url, params=None, data=None, json=None, cookies=None, headers=None, timeout=5, files=None,
+             verify=True, stream=None, allow_redirects=True):
+        rsp = requests.post(url, params=params, data=data, json=json, cookies=cookies, headers=headers, timeout=timeout,
+                            files=files, verify=verify, stream=stream, allow_redirects=allow_redirects)
         rsp.encoding = 'utf-8'
         return rsp
 
@@ -233,7 +239,12 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
             return ele[0]
 
     def loadModule(self, name, fileName):
+        if not fileName:
+            fileName = os.path.join(os.path.join("../plugin"), f'{name}.py')
         return SourceFileLoader(name, fileName).load_module()
+
+    def loadSpider(self, name):
+        return self.loadModule(name).Spider()
 
     # ==================== 静态函数 ======================
     def log(self, msg):
@@ -338,16 +349,29 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         return urljoin(base_url, path)
 
     @staticmethod
-    def coverDict2form(data: dict):
+    def coverDict2form(data: dict, skip_empty=False):
         """
         字典转form
-        @param data:
+        @param data: 字典数据
+        @param skip_empty: 是否跳过空值
         @return:
         """
         forms = []
         for k, v in data.items():
+            if skip_empty and not v:
+                continue
             forms.append(f'{k}={v}')
         return '&'.join(forms)
+
+    json_to_params = coverDict2form
+
+    @staticmethod
+    def coverForm2dict(query_string):
+        parsed_data = parse_qs(query_string)
+        result = {key: value[0] for key, value in parsed_data.items()}
+        return result
+
+    params_to_json = coverForm2dict
 
     @staticmethod
     def buildUrl(url: str, obj: dict = None):
@@ -499,6 +523,15 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         return self.stream2bytes(some_stream)
 
     @staticmethod
+    def uuid():
+        return str(uuid.uuid4())
+
+    @staticmethod
+    def random_str(length=16):
+        chars = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(chars) for _ in range(length))
+
+    @staticmethod
     def base64Encode(text):
         """
         base64编码文本
@@ -506,6 +539,8 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         @return:
         """
         return base64.b64encode(text.encode("utf8")).decode("utf-8")  # base64编码
+
+    e64 = base64Encode
 
     @staticmethod
     def base64Decode(text: str):
@@ -515,6 +550,8 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
         @return:
         """
         return base64.b64decode(text).decode("utf-8")  # base64解码
+
+    d64 = base64Decode
 
     @staticmethod
     def atob(text):
@@ -764,6 +801,40 @@ class BaseSpider(metaclass=ABCMeta):  # 元类 默认的元类 type
             return localdict
         except Exception as e:
             return {'error': f'执行报错:{e}'}
+
+    def host_late(self, url_list):
+        if isinstance(url_list, str):
+            urls = [u.strip() for u in url_list.split(',')]
+        else:
+            urls = url_list
+
+        if len(urls) <= 1:
+            return urls[0] if urls else ''
+
+        results = {}
+        threads = []
+        session = requests.Session()
+
+        def test_host(url, session):
+            try:
+                start_time = time.time()
+                _response = session.head(url, timeout=1.0, allow_redirects=False)
+                delay = (time.time() - start_time) * 1000
+                results[url] = delay
+            except Exception as e:
+                results[url] = float('inf')
+
+        for url in urls:
+            t = threading.Thread(target=test_host, args=(url, session))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        session.close()
+
+        return min(results.items(), key=lambda x: x[1])[0]
 
 
 Spider = BaseSpider

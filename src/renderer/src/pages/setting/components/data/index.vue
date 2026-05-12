@@ -256,7 +256,7 @@ const TABLE_OPTIONS = computed(() => [
   { label: t('pages.moment.history.title'), value: 'history' },
   { label: t('pages.moment.star.title'), value: 'star' },
   { label: t('pages.setting.title'), value: 'setting' },
-  { label: t('pages.plugin.title'), value: 'plugin' },
+  { label: t('pages.lab.extension.plugin.title'), value: 'plugin' },
 ]);
 
 const HISTORY_TYPE_MAP: Record<IDataImportType, 6 | 7> = { simple: 6, complete: 7 };
@@ -344,7 +344,7 @@ const refreshEmitter = (types: string[] = []) => {
 
 const getHistoryConf = async (importType: IDataImportType) => {
   try {
-    const resp = await fetchHistoryPage({ page: 1, pageSize: 10, type: [HISTORY_TYPE_MAP[importType]] });
+    const resp = await fetchHistoryPage({ pageNum: 1, pageSize: 10, type: [HISTORY_TYPE_MAP[importType]] });
 
     const rawList = isArray(resp?.list) ? resp.list : [];
     const target = importType === DATA_IMPORT_TYPE.SIMPLE ? importSimpleHistoryList : importCompleteHistoryList;
@@ -413,8 +413,7 @@ const importData = async (importType: IDataImportType, putType: IDataPutType) =>
     }
 
     const resp = await dataDbImport({ importType, putType, api, remoteType: type });
-
-    if (resp) {
+    if (resp.success) {
       refreshEmitter();
       MessagePlugin.success(t('common.success'));
     } else {
@@ -478,8 +477,7 @@ const clearData = async () => {
     if (isArrayEmpty(keyList)) return;
 
     const resp = await dataDbClear({ type: keyList });
-
-    if (resp) {
+    if (resp.success) {
       refreshEmitter(keyList);
       MessagePlugin.success(t('common.success'));
     } else {
@@ -487,7 +485,7 @@ const clearData = async () => {
     }
   } catch (error) {
     console.error('Clear data error:', error);
-    MessagePlugin.error(`${t('common.error')}:${error}`);
+    MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
   }
 };
 
@@ -517,8 +515,8 @@ const cloudBackup = async () => {
       return;
     }
 
-    const syncStatus = await dataCloudBackup();
-    if (syncStatus) {
+    const resp = await dataCloudBackup();
+    if (resp.success) {
       MessagePlugin.success(t('common.success'));
     } else {
       MessagePlugin.warning(t('common.fail'));
@@ -540,8 +538,8 @@ const cloudResume = async () => {
       return;
     }
 
-    const syncStatus = await dataCloudResume();
-    if (syncStatus) {
+    const resp = await dataCloudResume();
+    if (resp.success) {
       refreshEmitter();
       MessagePlugin.success(t('common.success'));
     } else {

@@ -56,5 +56,9 @@ export default {
         noSupport: '当前适配器不支持日志输出',
       },
     },
+    terminal: {
+      success: '终端连接成功',
+      error: '终端连接发生错误',
+    },
   },
 };

@@ -8,7 +8,6 @@ import { PROXY_API } from '@shared/config/env';
 import { LOG_MODULE } from '@shared/config/logger';
 import type { ISettingKey } from '@shared/config/tblSetting';
 import { settingKeys, settingList as tblSetting } from '@shared/config/tblSetting';
-import { aes, base64, randomUUID } from '@shared/modules/crypto';
 import { jsonStrToObj } from '@shared/modules/obj';
 import {
   isArray,
@@ -26,6 +25,7 @@ import {
   isUUID,
 } from '@shared/modules/validate';
 import type { IDbStore } from '@shared/types/db';
+import { aes, base64, randomUUID } from '@zy/crypto';
 
 const logger = loggerService.withContext(LOG_MODULE.DATA_HELPER);
 

@@ -1,9 +1,9 @@
 import { loggerService } from '@logger';
 import { request } from '@main/utils/request';
 import { LOG_MODULE } from '@shared/config/logger';
-import { randomNanoid } from '@shared/modules/crypto';
 import { toM, toSubtract, toUnix, toY, toYMD } from '@shared/modules/date';
 import { isArrayEmpty, isNil, isPositiveFiniteNumber, isStrEmpty, isString } from '@shared/modules/validate';
+import { randomNanoid } from '@zy/crypto';
 
 const logger = loggerService.withContext(LOG_MODULE.FILM_REC_HOT);
 
@@ -280,6 +280,55 @@ export const hisense = async (doc: IRecommHotOptions = {}): Promise<IRecommHot[]
 };
 
 /**
+ * 欢网
+ *
+ * @see https://bigdata.huan.tv/realtime/live#/vod
+ */
+export const huantv = async (doc: IRecommHotOptions = {}): Promise<IRecommHot[]> => {
+  try {
+    let { type = 1, date } = doc;
+
+    if (isStrEmpty(date) || isNil(date)) date = toYMD();
+    if (isString(type)) type = Number.parseInt(type);
+    if (![1, 2, 3].includes(type)) type = 1; // 1:电影 2:电视剧 3:综艺
+
+    const TYPE_MAP = {
+      1: 3,
+      2: 1,
+      3: 2,
+    };
+
+    const url = `https://tv-zone-api.huan.tv/tv-zone-mobile-api/v1/channel/demand/list/${date}/json`;
+    const { data: resp } = await request.request({
+      url,
+      method: 'GET',
+      params: {
+        channel_type: TYPE_MAP[type],
+        duration: 1, // 0:全部 1:热播期
+      },
+    });
+
+    if (!resp?.success) return [];
+
+    const rawList = resp?.data?.data_list;
+    if (isNil(rawList) || isArrayEmpty(rawList)) return [];
+
+    return rawList
+      .map((item) => ({
+        vod_id: item.wikiId || item.wikiIdH || randomNanoid(),
+        vod_name: item.programName ?? '',
+        vod_hot: Number(item.playRate) || 0,
+        vod_pic: '',
+        vod_remarks: item.level ?? '',
+      }))
+      .sort((a, b) => b.vod_hot - a.vod_hot);
+  } catch (error) {
+    logger.error('Failed to fetch huan search', error as Error);
+    return [];
+  }
+};
+
+/**
  * 酷云
  *
  * @see https://www.ky.live
@@ -471,6 +520,7 @@ export default {
   quark,
   baidu,
   hisense,
+  huantv,
   kylive,
   enlightent,
 };

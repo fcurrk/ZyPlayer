@@ -31,7 +31,7 @@
         <t-switch v-model="row.isActive" :disabled="row.key === 'debug'" @change="handleOpActiveSwitch(row.id)" />
       </template>
       <template #op="slotProps">
-        <t-space>
+        <t-space size="small">
           <t-link theme="primary" @click="handleOperation('check', [slotProps.row.id])">
             {{ $t('common.check') }}
             <template v-if="slotProps.row.check" #prefix-icon>
@@ -147,7 +147,7 @@ const resetTable = () => {
 const fetchTable = async () => {
   try {
     const resp = await fetchIptvPage({
-      page: pagination.value.current,
+      pageNum: pagination.value.current,
       pageSize: pagination.value.pageSize,
       kw: searchValue.value,
     });
@@ -192,8 +192,12 @@ const updateItem = async (ids: string[], doc: Partial<IModels['iptv']>) => {
 
 const setDefaultItem = async (id: string) => {
   try {
-    await putIptvDefault(id);
-    MessagePlugin.success(`${t('common.success')}`);
+    const resp = await putIptvDefault(id);
+    if (resp.success) {
+      MessagePlugin.success(`${t('common.success')}`);
+    } else {
+      MessagePlugin.warning(`${t('common.fail')}`);
+    }
   } catch (error) {
     console.error('Fail to set default item', error);
     MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
@@ -216,7 +220,8 @@ const checkItem = async (ids: string[]) => {
 
         let isActive = false;
         try {
-          isActive = await fetchIptvCheck(id);
+          const resp = await fetchIptvCheck(id);
+          isActive = resp.success;
         } catch {
           // ignore error
         }

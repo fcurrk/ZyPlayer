@@ -56,5 +56,9 @@ export default {
         noSupport: '當前適配器不支持日誌輸出',
       },
     },
+    terminal: {
+      success: '終端連接成功',
+      error: '終端連接發生錯誤',
+    },
   },
 };

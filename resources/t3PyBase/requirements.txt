@@ -1,7 +1,7 @@
 cachetools
+grpcio
 lxml
 jsonpath
 pyquery
 pycryptodome
 requests
-pyzmq

@@ -7,7 +7,7 @@
           ref="formRef"
           :data="formData"
           :rules="RULES"
-          :label-width="80"
+          :label-width="90"
           required-mark-position="right"
           label-align="left"
           reset-type="initial"
@@ -83,7 +83,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { hash, hmac } from '@shared/modules/crypto';
+import { hash, hmac } from '@zy/crypto';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { computed, ref, useTemplateRef, watch } from 'vue';

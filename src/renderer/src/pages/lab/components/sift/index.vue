@@ -182,7 +182,7 @@ import type { IReqConfig, IReqResponse } from '@/components/input-req/index.vue'
 import InputReq from '@/components/input-req/index.vue';
 import { handleReq } from '@/components/input-req/utils';
 import TagNav from '@/components/tag-nav/index.vue';
-import type { ITerminalLog, ITerminalOptions } from '@/components/terminal/index.vue';
+import type { IXTermLog, IXTermOptions } from '@/components/terminal/index.vue';
 import Terminal from '@/components/terminal/index.vue';
 import { attachContent } from '@/config/global';
 import { t } from '@/locales';
@@ -219,23 +219,16 @@ const editConf = ref<IEditorOptions['normal']>({
   theme: storeSetting.displayTheme === THEME.LIGHT ? 'code-light' : 'code-dark',
   wordWrap: 'off',
 });
-const termConf = ref<ITerminalOptions>({
-  allowProposedApi: true,
+const termConf = ref<IXTermOptions>({
   convertEol: true,
   cursorBlink: false,
   cursorStyle: 'block',
   cursorInactiveStyle: 'block',
-  fontSize: 13,
-  fontFamily: 'JetBrainsMono, monospace',
   scrollback: 10000,
   scrollSensitivity: 1,
   smoothScrollDuration: 0,
-  theme: {
-    background: storeSetting.displayTheme === THEME.LIGHT ? '#e8e8e8' : '#393939',
-    cursor: storeSetting.displayTheme === THEME.LIGHT ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    foreground: storeSetting.displayTheme === THEME.LIGHT ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    selectionBackground: storeSetting.displayTheme === THEME.LIGHT ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)',
-  },
+  theme: storeSetting.displayTheme === THEME.LIGHT ? 'XtermLight' : 'XtermDark',
+  searchTheme: storeSetting.displayTheme === THEME.LIGHT ? 'XtermSearchLight' : 'XtermSearchDark',
 });
 
 const siftFormData = ref({
@@ -286,11 +279,8 @@ watch(
   (val) => {
     editConf.value.theme = val === THEME.LIGHT ? 'code-light' : 'code-dark';
 
-    termConf.value.theme = {
-      foreground: val === THEME.LIGHT ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-      background: val === THEME.LIGHT ? '#e8e8e8' : '#393939',
-      cursor: val === THEME.LIGHT ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    };
+    termConf.value.theme = val === THEME.LIGHT ? 'XtermLight' : 'XtermDark';
+    termConf.value.searchTheme = val === THEME.LIGHT ? 'XtermSearchLight' : 'XtermSearchDark';
   },
 );
 
@@ -514,7 +504,7 @@ const handleOpDemo = () => {
 
 // output
 
-const logger = (type: typeof active.value.output, prefix: string, level: ITerminalLog, text: unknown) => {
+const logger = (type: typeof active.value.output, prefix: string, level: IXTermLog, text: unknown) => {
   const printRef = type === 'testResult' ? testResultRef.value : null;
   if (!printRef) return;
 

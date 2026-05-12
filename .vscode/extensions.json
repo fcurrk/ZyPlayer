@@ -1,12 +1,12 @@
 {
   "recommendations": [
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
     "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
     "lokalise.i18n-ally",
-    // "oxc.oxc-vscode",
-    "typescriptteam.native-preview",
+    // "ms-vscode.vscode-typescript-next",
     "sdras.vue-vscode-snippets",
+    // "typescriptteam.native-preview",
     "vitest.explorer",
     "vue.volar"
   ]

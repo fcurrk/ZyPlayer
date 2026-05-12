@@ -5,10 +5,10 @@ import { isJsonStr, isObjectEmpty } from '@shared/modules/validate';
 import JSON5 from 'json5';
 
 import { fetchLoggerStream } from '@/api/system';
-import type { ITerminalLog } from '@/components/terminal/index.vue';
+import type { IXTermLog } from '@/components/terminal/index.vue';
 import { wsRequest } from '@/utils/request';
 
-type ILogger = (type: 'logger' | 'testResult', prefix: string, level: ITerminalLog, text: unknown) => void;
+type ILogger = (type: 'logger' | 'testResult', prefix: string, level: IXTermLog, text: unknown) => void;
 
 const parseLog = (chunk: string) => {
   if (!isJsonStr(chunk)) return null;
@@ -16,7 +16,7 @@ const parseLog = (chunk: string) => {
   return isObjectEmpty(data) ? null : data;
 };
 
-const emitLog = (logger: ILogger, timestamp: number, level: ITerminalLog, message: string) => {
+const emitLog = (logger: ILogger, timestamp: number, level: IXTermLog, message: string) => {
   logger('logger', toHMS(timestamp), level, message);
 };
 

@@ -65,7 +65,7 @@
 </template>
 <script setup lang="ts">
 import { ANALYZE_TYPE } from '@shared/config/parse';
-import { randomUUID } from '@shared/modules/crypto';
+import { randomUUID } from '@zy/crypto';
 import type { FormInstanceFunctions, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next';
 import { ref, useTemplateRef, watch } from 'vue';

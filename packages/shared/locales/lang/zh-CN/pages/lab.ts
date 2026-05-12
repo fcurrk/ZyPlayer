@@ -49,6 +49,7 @@ export default {
           rsaesPkcs1: 'PKCS1',
           rsaOaep: 'OAEP',
           rsaOaepSha1: 'OAEP-SHA1',
+          rsaOaepSha224: 'OAEP-SHA224',
           rsaOaepSha256: 'OAEP-SHA256',
           rsaOaepSha384: 'OAEP-SHA384',
           rsaOaepSha512: 'OAEP-SHA512',
@@ -64,6 +65,10 @@ export default {
           rabbit: 'Rabbit',
           rabbitLegacy: 'RabbitLegacy',
           sm4: 'SM4',
+        },
+        rsaModeMap: {
+          standard: '公加私解',
+          nonStandard: '私加公解',
         },
       },
       message: {
@@ -246,24 +251,8 @@ export default {
         title: '应用信息',
         author: '作者',
         desc: '描述',
-        status: '状态',
         stop: '停止',
         start: '启动',
-        error: '出错',
-      },
-      control: {
-        title: '控制中心',
-        start: '启动服务',
-        stop: '停止服务',
-        devtool: '开发者工具',
-        upgrade: '升级',
-        update: '更新',
-        install: '安装',
-        uninstall: '卸载',
-        uninstallTip: '卸载后将无法使用, 请谨慎操作',
-        cancelTip: '当前插件存在未执行完命令, 请稍后',
-        devtoolDomAttchErrTip: '打开开发者工具失败, DOM未挂载到页面上',
-        loadUiEntryError: '加载入口失败',
       },
       content: {
         title: 'README',
@@ -271,14 +260,12 @@ export default {
       webview: {
         title: '内容视图',
       },
-      installDialog: {
+      install: {
         tip: {
-          tip1: '将项目放入指定目录中, 文件名不可有特殊字符(如已放入则忽略)',
-          tip2: '输入项目名进行安装(项目文件名)',
+          file: '将项目放入目录中, 文件名不可含特殊字符(如已放入则忽略)',
+          input: '选择需安装项目目录',
         },
-        step: '步骤',
-        goDir: '前往指定目录',
-        confirm: '安装',
+        goDir: '前往插件目录',
       },
     },
     env: {

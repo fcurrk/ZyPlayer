@@ -1,7 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { basename, dirname, extname, join } from 'node:path';
 
-import { hash } from '@shared/modules/crypto';
 import type { ISizeOption } from '@shared/modules/size';
 import { calculateSize } from '@shared/modules/size';
 import {
@@ -14,6 +13,7 @@ import {
   isStrEmpty,
   isString,
 } from '@shared/modules/validate';
+import { hash } from '@zy/crypto';
 import { fdir as Fdir } from 'fdir';
 import fs from 'fs-extra';
 import JSON5 from 'json5';

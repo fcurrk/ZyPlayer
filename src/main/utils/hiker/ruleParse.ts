@@ -1,4 +1,4 @@
-import { base64 } from '@shared/modules/crypto';
+import { base64 } from '@zy/crypto';
 
 export const splitWithEscapedDelimiter = (str, delimiter) => {
   const parts: string[] = [];

@@ -16,10 +16,10 @@
 </template>
 <script setup lang="ts">
 import { IPC_CHANNEL } from '@shared/config/ipcChannel';
-import { base64 } from '@shared/modules/crypto';
 import { headersPascalCase } from '@shared/modules/headers';
 import { isHttp, isObject, isObjectEmpty } from '@shared/modules/validate';
 import type { IAuthRelayPayload } from '@shared/types/auth';
+import { base64 } from '@zy/crypto';
 import type {
   DidNavigateEvent,
   DidNavigateInPageEvent,

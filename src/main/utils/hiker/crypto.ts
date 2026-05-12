@@ -1,5 +1,5 @@
-import { aes, base64, des, hash, rabbit, rabbitLegacy, rc4, rsa, sm4, tripleDes } from '@shared/modules/crypto';
-import type { Mode, Pad, RsaPad, Sm4Mode, Sm4Pad } from '@shared/modules/crypto/type';
+import type { Mode, Pad, RsaPad, Sm4Mode, Sm4Pad } from '@zy/crypto';
+import { aes, base64, des, hash, rabbit, rabbitLegacy, rc4, rsa, sm4, tripleDes } from '@zy/crypto';
 
 export const base64Encode = (val: string) => base64.encode({ src: val });
 export const base64Decode = (val: string) => base64.decode({ src: val });
@@ -101,7 +101,7 @@ export const rsaX = (
     return rsa.encode({
       src: input,
       key,
-      type: pub ? 0 : 1,
+      type: pub ? 0 : 1, // 0:公钥加密(标准) 1:私钥加密(非标)
       pad: mode,
       inputEncode: inBase64 ? 'base64' : 'utf8',
       outputEncode: outBase64 ? 'base64' : 'utf8',
@@ -111,7 +111,7 @@ export const rsaX = (
     return rsa.decode({
       src: input,
       key,
-      type: pub ? 0 : 1,
+      type: pub ? 1 : 0, // 0:私钥解密(标准) 1:公钥解密(非标)
       pad: mode,
       inputEncode: inBase64 ? 'base64' : 'utf8',
       outputEncode: outBase64 ? 'base64' : 'utf8',
@@ -129,3 +129,32 @@ export const tripleDesEncode = (val: string, key: string, iv: string, mode?: Mod
   tripleDes.encode({ src: val, key, iv, mode, pad });
 export const tripleDesDecode = (val: string, key: string, iv: string, mode?: Mode, pad?: Pad) =>
   tripleDes.decode({ src: val, key, iv, mode, pad });
+export const tripleDesX = (
+  mode: Mode,
+  encrypt: boolean,
+  input: string,
+  inBase64: boolean,
+  key: string,
+  iv: string,
+  outBase64: boolean,
+) => {
+  if (encrypt) {
+    return tripleDes.encode({
+      src: input,
+      key,
+      iv,
+      mode,
+      inputEncode: inBase64 ? 'base64' : 'utf8',
+      outputEncode: outBase64 ? 'base64' : 'utf8',
+    });
+  } else {
+    return tripleDes.decode({
+      src: input,
+      key,
+      iv,
+      mode,
+      inputEncode: inBase64 ? 'base64' : 'utf8',
+      outputEncode: outBase64 ? 'base64' : 'utf8',
+    });
+  }
+};

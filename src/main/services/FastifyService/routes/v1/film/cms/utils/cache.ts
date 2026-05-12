@@ -2,11 +2,11 @@ import { loggerService } from '@logger';
 import { dbService } from '@main/services/DbService';
 import { SITE_TYPE } from '@shared/config/film';
 import { LOG_MODULE } from '@shared/config/logger';
-import { hash } from '@shared/modules/crypto';
 import LruCache from '@shared/modules/lrucache';
 import singleton from '@shared/modules/singleton';
 import { isNil, isPositiveFiniteNumber } from '@shared/modules/validate';
 import type { ICmsAdapter, ICmsAdapterConstructor } from '@shared/types/cms';
+import { hash } from '@zy/crypto';
 
 import {
   T0Adapter,
@@ -77,7 +77,7 @@ class WorkLruCache<K = string, V = ICmsAdapter> extends LruCache<K, V> {
 const CACHE_LIMIT = 10;
 const lruCache = new WorkLruCache<string, ICmsAdapter>(CACHE_LIMIT);
 
-export const prepare = async (uuid: string, force: boolean = false): Promise<ICmsAdapter> => {
+export const adapter = async (uuid: string, force: boolean = false): Promise<ICmsAdapter> => {
   if (!uuid) {
     throw new Error('Parameter "uuid" is required');
   }
@@ -138,4 +138,12 @@ export const terminate = async () => {
   }
 
   lruCache.clear();
+};
+
+export const setup = async () => {
+  const modules = Object.values(CMS_ADAPTER_MAP) as Array<ICmsAdapterConstructor>;
+  for (const module of modules) {
+    const SingleAdapter = singleton(module);
+    if (SingleAdapter?.setup) await SingleAdapter.setup();
+  }
 };

@@ -1,8 +1,8 @@
 import type { IBarrage, IBarrageSendOptions } from '@shared/types/barrage';
 import type * as Dashjs from 'dashjs';
 import type Flvjs from 'flv.js';
-import type { HlsConfig as Hlsjsonfig } from 'hls.js';
 import type Hlsjs from 'hls.js';
+import type { HlsConfig as Hlsjsonfig } from 'hls.js';
 import type Mpegtsjs from 'mpegts.js';
 // https://gist.github.com/Security2431/2b28f17e11870bb4b0e347673e16d5ba#comments
 import type Shakajs from 'shaka-player/dist/shaka-player.compiled';

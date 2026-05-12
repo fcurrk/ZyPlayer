@@ -3,9 +3,9 @@ import * as XBPQParse from '@main/utils/hiker/ruleParse';
 import { MOBILE_UA, PC_UA } from '@main/utils/hiker/ua';
 import { request } from '@main/utils/request';
 import { SITE_LOGGER_MAP, SITE_TYPE } from '@shared/config/film';
-import { hash } from '@shared/modules/crypto';
 import { getHome, urlResolve } from '@shared/modules/headers';
 import type { ICmsParams, ICmsResultPromise, IConstructorOptions } from '@shared/types/cms';
+import { hash } from '@zy/crypto';
 import JSON5 from 'json5';
 
 import {

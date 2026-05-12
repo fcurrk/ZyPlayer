@@ -1,4 +1,4 @@
-import componentsLocale from 'tdesign-vue-next/es/locale/en_US';
+import componentsLocale from 'tdesign-vue-next/lib/locale/en_US';
 
 import aigc from './aigc';
 import common from './common';

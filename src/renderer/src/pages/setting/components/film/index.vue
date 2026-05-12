@@ -37,7 +37,7 @@
         <span v-else-if="row.type === SITE_TYPE.T3_APPFOX">{{ $t('pages.film.field.typeMap.t3-csp_appfox') }}</span>
       </template>
       <template #op="slotProps">
-        <t-space>
+        <t-space size="small">
           <t-link theme="primary" @click="handleOperation('check', [slotProps.row.id])">
             {{ $t('common.check') }}
             <template v-if="slotProps.row.check" #prefix-icon>
@@ -156,7 +156,7 @@ const resetTable = () => {
 const fetchTable = async () => {
   try {
     const resp = await fetchSitePage({
-      page: pagination.value.current,
+      pageNum: pagination.value.current,
       pageSize: pagination.value.pageSize,
       kw: searchValue.value,
     });
@@ -202,8 +202,12 @@ const updateItem = async (ids: string[], doc: Partial<IModels['site']>) => {
 
 const setDefaultItem = async (id: string) => {
   try {
-    await putSiteDefault(id);
-    MessagePlugin.success(`${t('common.success')}`);
+    const resp = await putSiteDefault(id);
+    if (resp.success) {
+      MessagePlugin.success(`${t('common.success')}`);
+    } else {
+      MessagePlugin.warning(`${t('common.fail')}`);
+    }
   } catch (error) {
     console.error('Fail to set default item', error);
     MessagePlugin.error(`${t('common.error')}: ${(error as Error).message}`);
@@ -226,7 +230,8 @@ const checkItem = async (ids: string[]) => {
 
         let isActive = false;
         try {
-          isActive = await fetchCmsCheck({ uuid: id, type: 'simple' });
+          const resp = await fetchCmsCheck({ uuid: id, type: 'simple' });
+          isActive = resp.success;
         } catch {
           // ignore error
         }

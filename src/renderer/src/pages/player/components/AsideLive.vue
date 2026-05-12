@@ -367,7 +367,7 @@ const getChannel = async () => {
   const { pageIndex, pageSize } = pagination.value;
 
   const resp = await fetchChannelPage({
-    page: pageIndex,
+    pageNum: pageIndex,
     pageSize,
     group: active.value.class,
   });

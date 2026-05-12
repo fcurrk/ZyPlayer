@@ -1,12 +1,12 @@
-import { Schema } from '@main/types/server';
 import { iptvTypes } from '@shared/config/live';
+import type { Static } from '@sinclair/typebox';
 import { Type } from '@sinclair/typebox';
 
-import { createHttpSuccessResponseSchema } from '../../base';
+import { PageQuery, ResponseErrorSchema, ResponseSuccessSchema } from '../../base';
 
-const API_PREFIX = '[live]iptv';
+const API_PREFIX = 'live';
 
-const baseItemSchema = Type.Object({
+const IptvSchema = Type.Object({
   id: Type.String({ description: 'id' }),
   key: Type.String({ description: 'key' }),
   name: Type.Union([Type.String(), Type.Null()], { description: 'name' }),
@@ -20,181 +20,207 @@ const baseItemSchema = Type.Object({
   updatedAt: Type.Integer({ format: 'int64', description: 'updated timestamp' }),
 });
 
-const inputItemSchema = Type.Partial(Type.Omit(baseItemSchema, ['id', 'createdAt', 'updatedAt']));
+export const IptvResponse = Type.Omit(IptvSchema, []);
 
-const putItemSchema = Type.Partial(baseItemSchema);
+const IptvListResponse = Type.Object({
+  list: Type.Array(IptvResponse),
+  total: Type.Number({ description: 'Total count' }),
+  default: Type.String({ description: 'Default id' }),
+});
 
-export const outputItemSchema = baseItemSchema;
+const IptvActiveListResponse = Type.Object({
+  list: Type.Array(IptvResponse),
+  default: Type.Union([IptvResponse, Type.Object({}, { additionalProperties: false })], {
+    description: 'default data',
+  }),
+  extra: Type.Partial(
+    Type.Object({
+      epg: Type.String({ description: 'epg' }),
+      logo: Type.String({ description: 'logo' }),
+      ipMark: Type.Boolean({ description: 'ipMark' }),
+      delay: Type.Boolean({ description: 'delay' }),
+      thumbnail: Type.Boolean({ description: 'thumbnail' }),
+    }),
+  ),
+});
+
+const IptvResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: IptvResponse,
+  },
+  { description: 'Response schema for Iptv response' },
+);
+
+const IptvListResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: IptvListResponse,
+  },
+  { description: 'Response schema for Iptv list' },
+);
+
+const IptvActiveListResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: IptvActiveListResponse,
+  },
+  { description: 'Response schema for Iptv active list' },
+);
+
+const IptvArrayResponseSchema = Type.Object(
+  {
+    ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+    data: Type.Array(IptvResponse),
+  },
+  { description: 'Response schema for Iptv array' },
+);
 
 export const addSchema = {
   tags: [API_PREFIX],
   summary: 'Add data',
-  description: 'Add a new data.',
-  body: inputItemSchema,
+  description: 'Add a new data',
+  body: Type.Partial(Type.Omit(IptvSchema, ['id', 'createdAt', 'updatedAt'])),
   response: {
-    200: createHttpSuccessResponseSchema(Type.Array(outputItemSchema), { description: 'Successful Operation' }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvArrayResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const deleteSchema = {
   tags: [API_PREFIX],
   summary: 'Delete data',
-  description: 'Delete data by id or type, if id and type is empty, delete all.',
+  description: 'Delete by id or type, if id and type is empty, delete all',
   body: Type.Object({
-    id: Type.Optional(Type.Array(Type.String(), { description: 'data id' })),
+    id: Type.Optional(Type.Array(Type.String(), { description: 'id' })),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(Type.Null(), {
-      description: 'Successful Operation',
-    }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: Type.Object(
+      {
+        ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+        data: Type.Null({ description: 'delete success' }),
+      },
+      { description: 'Response schema for delete data' },
+    ),
+    500: ResponseErrorSchema,
   },
 };
 
 export const putSchema = {
   tags: [API_PREFIX],
   summary: 'Set data',
-  description: 'Set data.',
+  description: 'Set data',
   body: Type.Object({
-    id: Type.Array(Type.String(), { description: 'updated data id' }),
-    doc: putItemSchema,
+    id: Type.Array(Type.String(), { description: 'id' }),
+    doc: Type.Partial(Type.Omit(IptvSchema, ['id', 'createdAt', 'updatedAt'])),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(Type.Array(outputItemSchema), { description: 'Successful Operation' }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvArrayResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const pageSchema = {
   tags: [API_PREFIX],
   summary: 'Get list',
-  description: 'Get list with pagination and filtering.',
-  querystring: Type.Object({
-    page: Type.Integer({ format: 'int32', description: 'page number' }),
-    pageSize: Type.Integer({ format: 'int32', description: 'page size' }),
-    kw: Type.Optional(Type.String({ description: 'search keyword' })),
-  }),
+  description: 'Get list with pagination and filtering',
+  querystring: Type.Partial(
+    Type.Object({
+      kw: Type.String({ description: 'search keyword' }),
+      ...PageQuery,
+    }),
+  ),
   response: {
-    200: createHttpSuccessResponseSchema(
-      Type.Object({
-        list: Type.Optional(Type.Array(outputItemSchema)),
-        total: Type.Optional(Type.Integer({ format: 'int32' })),
-        default: Type.Optional(Type.String()),
-      }),
-      { description: 'Successful Operation' },
-    ),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvListResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const getActiveSchema = {
   tags: [API_PREFIX],
   summary: 'Get active',
-  description: 'Get active data.',
+  description: 'Get active data',
   response: {
-    200: createHttpSuccessResponseSchema(
-      Type.Object({
-        list: Type.Optional(Type.Array(outputItemSchema)),
-        default: Type.Optional(outputItemSchema),
-        class: Type.Optional(Type.Array(Type.Object({ label: Type.String(), value: Type.String() }))),
-        extra: Type.Optional(
-          Type.Object({
-            epg: Type.Optional(Type.String({ description: 'epg' })),
-            logo: Type.Optional(Type.String({ description: 'logo' })),
-            ipMark: Type.Optional(Type.Boolean({ description: 'ipMark' })),
-            delay: Type.Optional(Type.Boolean({ description: 'delay' })),
-            thumbnail: Type.Optional(Type.Boolean({ description: 'thumbnail' })),
-          }),
-        ),
-      }),
-      { description: 'Successful Operation' },
-    ),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvActiveListResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const getDetailSchema = {
   tags: [API_PREFIX],
   summary: 'Get detail',
-  description: 'Get detail by id.',
+  description: 'Get detail by id',
   params: Type.Object({
-    id: Type.String({ description: 'data id' }),
+    id: Type.String({ description: 'id' }),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(outputItemSchema, {
-      description: 'Successful Operation',
-    }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const getDetailByKeySchema = {
   tags: [API_PREFIX],
   summary: 'Get detail',
-  description: 'Get detail by key.',
+  description: 'Get detail by key',
   params: Type.Object({
-    key: Type.String({ description: 'data key' }),
+    key: Type.String({ description: 'key' }),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(outputItemSchema, {
-      description: 'Successful Operation',
-    }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: IptvResponseSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const setDefaultSchema = {
   tags: [API_PREFIX],
   summary: 'Set default',
-  description: 'Set default by id.',
+  description: 'Set default by id',
   params: Type.Object({
-    id: Type.String({ description: 'data id' }),
+    id: Type.String({ description: 'id' }),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(Type.Boolean(), {
-      description: 'Successful Operation',
-    }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: Type.Object(
+      {
+        ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+        data: Type.Object({
+          success: Type.Boolean({ description: 'Indicates whether the operation was successful' }),
+        }),
+      },
+      { description: 'Response schema for set default response' },
+    ),
+    400: ResponseErrorSchema,
+    500: ResponseErrorSchema,
   },
 };
 
 export const getCheckSchema = {
   tags: [API_PREFIX],
   summary: 'Check validity',
-  description: 'Check validity.',
+  description: 'Check validity',
   params: Type.Object({
-    id: Type.String({ description: 'data id' }),
+    id: Type.String({ description: 'id' }),
   }),
   response: {
-    200: createHttpSuccessResponseSchema(Type.Boolean(), { description: 'Successful Operation' }),
-    default: {
-      description: 'Unexpected Error',
-      $ref: Schema.ApiReponseError,
-    },
+    200: Type.Object(
+      {
+        ...Type.Omit(ResponseSuccessSchema, ['data']).properties,
+        data: Type.Object({
+          success: Type.Boolean({ description: 'Indicates whether the operation was successful' }),
+        }),
+      },
+      { description: 'Response schema for check validity response' },
+    ),
+    400: ResponseErrorSchema,
+    500: ResponseErrorSchema,
   },
 };
+
+export type AddIptvBody = Static<typeof addSchema.body>;
+export type DeleteIptvBody = Static<typeof deleteSchema.body>;
+export type PutIptvBody = Static<typeof putSchema.body>;
+export type GetIptvPageQuery = Static<typeof pageSchema.querystring>;
+export type GetIptvDetailParams = Static<typeof getDetailSchema.params>;
+export type GetIptvDetailByKeyParams = Static<typeof getDetailByKeySchema.params>;
+export type SetDefaultIptvParams = Static<typeof setDefaultSchema.params>;
+export type GetCheckIptvParams = Static<typeof getCheckSchema.params>;

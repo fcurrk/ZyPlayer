@@ -64,6 +64,7 @@ export enum IPC_CHANNEL {
 
   // notification
   NOTIFICATION_SEND = 'notification:send',
+  NOTIFICATION_CLICK = 'notification:click',
 
   // open
   OPEN_PATH = 'open:path',
