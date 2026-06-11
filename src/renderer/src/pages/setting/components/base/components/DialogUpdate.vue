@@ -158,7 +158,7 @@ const handleInstall = () => {
 };
 
 const handleOpenDownLink = () => {
-  window.electron.ipcRenderer.invoke(IPC_CHANNEL.OPEN_WEBSITE, 'https://github.com/fcurrk/zyplayer/releases/latest');
+  window.electron.ipcRenderer.invoke(IPC_CHANNEL.OPEN_WEBSITE, 'https://github.com/fcurrk/zyfun/releases/latest');
 };
 
 const handleDownStart = () => {
