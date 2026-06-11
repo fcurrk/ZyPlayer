@@ -61,7 +61,7 @@ export interface ChatRequestOptions {
   searchEnabled?: boolean;
 }
 
-const logger = loggerService.withContext(LOG_MODULE.AIGC_HELPER);
+const logger = loggerService.withContext(`${LOG_MODULE.AIGC_HELPER}<chat>`);
 
 const PROVIDER_VALIDATORS: Partial<Record<AIGC_PROVIDER_TYPE, LLMOptionsValidator>> = {
   [AIGC_PROVIDER_TYPE.OPENAI]: (options) => {
@@ -277,6 +277,7 @@ class ChatCompletion {
               typeof thinkingEnabled === 'boolean' ? (thinkingEnabled ? 'medium' : 'off') : thinkingEnabled,
             ),
           },
+          allowSystemInMessages: true,
         });
 
         for await (const chunk of fullStream) {
@@ -361,6 +362,7 @@ class ChatCompletion {
             typeof thinkingEnabled === 'boolean' ? (thinkingEnabled ? 'medium' : 'off') : thinkingEnabled,
           ),
         },
+        allowSystemInMessages: true,
       });
 
       completion = { type: 'text-delta', text, parentId: messageLength + 1, messageId: messageLength + 2 };

@@ -19,12 +19,14 @@ import { LEVEL_MAP, LOG_MODULE } from '@shared/config/logger';
 import type { IReqEncode } from '@shared/config/req';
 import { reqEncodes } from '@shared/config/req';
 import { toUnix, toYMD } from '@shared/modules/date';
-import { isHttp, isJsonStr, isNil } from '@shared/modules/validate';
+import { convertHeaders, isLocalhostURI } from '@shared/modules/headers';
+import { isHttp, isNil, isUndefined } from '@shared/modules/validate';
 import type { AxiosRequestConfig } from 'axios';
 import type { FastifyPluginAsync } from 'fastify';
 import iconv from 'iconv-lite';
+import JSON5 from 'json5';
 
-import { fixAdM3u8Ai } from './utils/m3u8';
+import { checkM3u8, fixAdM3u8Ai } from './utils/m3u8';
 
 const API_PREFIX = 'system';
 
@@ -91,46 +93,78 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
   );
 
-  fastify.get<{ Querystring: SystemM3u8AdRemoveQuery }>(
+  fastify.head<{ Querystring: SystemM3u8AdRemoveQuery }>(
     `/${API_PREFIX}/m3u8/adremove`,
     {
       schema: m3u8AdRemoveSchema,
     },
     async (req, reply) => {
       try {
-        const { url, headers: rawHeaders = '{}' } = req.query;
-        const headers = isJsonStr(rawHeaders) ? JSON.parse(rawHeaders) : {};
+        const { url } = req.query;
 
         if (!isHttp(url)) {
           return reply.code(400).send({ code: -1, msg: 'Invalid m3u8 URL', data: null });
         }
 
-        const M3U8_CONTENT_TYPES = [
-          'application/vnd.apple.mpegurl',
-          'application/x-mpegURL',
-          'application/octet-stream',
-        ];
+        const headers = Object.entries(convertHeaders(req.headers)).reduce<Record<string, string>>(
+          (acc, [key, value]) => {
+            if (isUndefined(value) || isLocalhostURI(value)) return acc;
+            acc[key] = value;
+            return acc;
+          },
+          {},
+        );
 
         try {
-          const ext = new URL(url).pathname.split('.').pop();
-          if (ext !== 'm3u8') {
-            const { data: resp } = await request.request({ url, method: 'HEAD', headers });
+          if (!(await checkM3u8(url, headers))) {
+            return reply.code(302).header('Location', url).send();
+          }
+          return reply.code(200).header('Content-Type', 'application/vnd.apple.mpegurl').send();
+        } catch {}
 
-            const contentType = resp?.headers?.['content-type'];
-            if (!contentType || !M3U8_CONTENT_TYPES.includes(contentType)) {
-              return reply.code(400).send({ code: -1, msg: 'Invalid m3u8 URL', data: null });
-            }
+        return reply.code(302).header('Location', url).send();
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(500).send();
+      }
+    },
+  );
+
+  fastify.get<{ Querystring: SystemM3u8AdRemoveQuery }>(
+    `/${API_PREFIX}/m3u8/adremove`,
+    {
+      schema: m3u8AdRemoveSchema,
+      exposeHeadRoute: false,
+    },
+    async (req, reply) => {
+      try {
+        const { url } = req.query;
+
+        if (!isHttp(url)) {
+          return reply.code(400).send({ code: -1, msg: 'Invalid m3u8 URL', data: null });
+        }
+
+        const headers = Object.entries(convertHeaders(req.headers)).reduce<Record<string, string>>(
+          (acc, [key, value]) => {
+            if (isUndefined(value) || isLocalhostURI(value)) return acc;
+            acc[key] = value;
+            return acc;
+          },
+          {},
+        );
+
+        try {
+          if (!(await checkM3u8(url, headers))) {
+            return reply.code(302).redirect(url);
           }
 
           const content = await fixAdM3u8Ai(url, headers);
           if (content && content.includes('.ts')) {
             return reply.code(200).header('Content-Type', 'application/vnd.apple.mpegurl').send(content);
           }
+        } catch {}
 
-          return reply.code(302).redirect(url);
-        } catch {
-          return reply.code(302).redirect(url);
-        }
+        return reply.code(302).redirect(url);
       } catch (error) {
         fastify.log.error(error);
         return reply.code(500).send({ code: -1, msg: (error as Error).message, data: null });
@@ -192,7 +226,7 @@ const api: FastifyPluginAsync = async (fastify): Promise<void> => {
       const linesplitter = readline.createInterface({ input: tail });
       linesplitter.on('line', (line) => {
         try {
-          const obj = JSON.parse(line);
+          const obj = JSON5.parse(line);
           if (LEVEL_MAP[obj.level] < minLevel) return;
           if (!type.includes(obj.module) && type.length !== 0) return;
 

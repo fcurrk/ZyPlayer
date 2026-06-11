@@ -111,14 +111,16 @@ export const m3u8AdRemoveSchema = {
   description: 'Remove ad from m3u8 segment.',
   querystring: Type.Object({
     url: Type.String({ format: 'uri', description: 'm3u8 url' }),
-    headers: Type.Optional(Type.String({ description: 'request headers' })),
   }),
   response: {
     200: {
       content: {
         'application/vnd.apple.mpegurl': { schema: Type.String() },
         'application/x-mpegURL': { schema: Type.String() },
-        'application/octet-stream': { schema: Type.String() },
+        'application/mpegurl': { schema: Type.String() },
+        'application/m3u8': { schema: Type.String() },
+        'audio/mpegurl': { schema: Type.String() },
+        'audio/x-mpegurl': { schema: Type.String() },
       },
       description: 'Successful Operation',
     },

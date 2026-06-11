@@ -3,7 +3,7 @@ import './assets/css/index.less';
 import type { SetupContext, SlotsType } from 'vue';
 import { defineComponent, onUnmounted, ref, shallowRef, toRaw } from 'vue';
 
-import { ArtPlayerAdapter, DPlayerAdapter, NPlayerAdapter, OPlayerAdapter, XgPlayerAdapter } from './core';
+import { ArtPlayerAdapter, XgPlayerAdapter } from './core';
 import type {
   IBarrage,
   IDecoderType,
@@ -18,10 +18,7 @@ import { mediaUtils, singleton } from './utils/tool';
 
 const adapterRelation: Record<IMultiPlayerType, new () => any> = {
   artplayer: ArtPlayerAdapter,
-  dplayer: DPlayerAdapter,
-  nplayer: NPlayerAdapter,
   xgplayer: XgPlayerAdapter,
-  oplayer: OPlayerAdapter,
 };
 
 const MultiPlayer = defineComponent({
@@ -42,7 +39,12 @@ const MultiPlayer = defineComponent({
       player?: IMultiPlayerType,
       mode?: IMultiPlayerCreateMode,
     ) => {
-      if (!rawOptions?.url || !rawOptions.container) return;
+      if ((!rawOptions.url && !rawOptions.quality?.length) || !rawOptions.container) return;
+      const url = Array.isArray(rawOptions.quality)
+        ? (rawOptions.quality.find((item) => item.select || item.url === rawOptions.url)?.url ??
+          rawOptions.quality[0]?.url ??
+          rawOptions.url)
+        : rawOptions.url!;
 
       const playerType = player ?? (Object.keys(adapterRelation)[0] as IMultiPlayerType);
       const playerMode = mode ?? 'switch';
@@ -50,12 +52,14 @@ const MultiPlayer = defineComponent({
       const options: Required<IMultiPlayerOptions> = {
         container: rawOptions.container,
         type: rawOptions.type!,
-        url: rawOptions.url,
+        url,
         startTime: typeof rawOptions.startTime === 'number' ? rawOptions.startTime : 0,
         autoplay: typeof rawOptions.autoplay === 'boolean' ? rawOptions.autoplay : true,
         isLive: !!rawOptions.isLive,
         next: !!rawOptions.next,
-        quality: Array.isArray(rawOptions.quality) ? rawOptions.quality : [],
+        quality: Array.isArray(rawOptions.quality)
+          ? rawOptions.quality.map((item) => ({ ...item, select: item.url === url }))
+          : [],
         headers:
           rawOptions.headers && typeof rawOptions.headers === 'object' && Object.keys(rawOptions.headers).length
             ? rawOptions.headers
@@ -74,7 +78,7 @@ const MultiPlayer = defineComponent({
 
         if (
           (options.type === 'mp4' && playerType !== 'xgplayer') ||
-          (['mpd', 'dash', 'shaka', 'flv'].includes(options.type) && playerType === 'oplayer') ||
+          ['mpd', 'dash', 'shaka', 'flv'].includes(options.type) ||
           (['mpd', 'dash', 'shaka'].includes(options.type) && playerType === 'xgplayer')
         ) {
           options.url = mediaUtils.convertStandardToUri(options.url, options.headers);

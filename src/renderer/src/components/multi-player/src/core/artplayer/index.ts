@@ -248,7 +248,7 @@ class ArtPlayerAdapter {
             return 'en';
         }
       })(), // 语言
-      quality: rawOptions.quality.map((q, i) => ({ html: q.name, url: q.url, default: i === 0 })), // 画质
+      quality: rawOptions.quality.map((item) => ({ html: item.name, url: item.url, default: item.select })), // 画质
       headers: rawOptions.headers, // 请求头
     };
 
@@ -270,7 +270,7 @@ class ArtPlayerAdapter {
       }
     } // 下集
 
-    Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2]; // 倍速
+    Artplayer.PLAYBACK_RATE = [0.75, 1, 1.25, 1.5, 2, 3]; // 倍速
 
     // 初始化
     const player: PlayerAdapter = new Artplayer(merge(this.options, options), function onReady() {

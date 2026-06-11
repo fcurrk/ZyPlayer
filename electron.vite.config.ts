@@ -32,7 +32,7 @@ export default defineConfig({
     resolve: {
       alias: {
         '@main': resolve('src/main'),
-        '@shared': resolve('packages/shared'),
+        '@shared': resolve('src/shared'),
         '@logger': resolve('src/main/services/LoggerService'),
         '@db': resolve('src/main/services/DatabaseService'),
         '@server': resolve('src/main/services/FastifyService'),
@@ -89,7 +89,7 @@ export default defineConfig({
     plugins: [],
     resolve: {
       alias: {
-        '@shared': resolve('packages/shared'),
+        '@shared': resolve('src/shared'),
         '@pkg': resolve('package.json'),
       },
     },
@@ -135,7 +135,7 @@ export default defineConfig({
         '@': resolve('src/renderer/src'),
         '@pkg': resolve('package.json'),
         '@renderer': resolve('src/renderer'),
-        '@shared': resolve('packages/shared'),
+        '@shared': resolve('src/shared'),
         '@logger': resolve('src/main/services/LoggerService'),
       },
     },
@@ -171,7 +171,7 @@ export default defineConfig({
               },
               {
                 name: 'vendor_crypto',
-                test: /[\\/]node_modules[\\/](crypto-js|he|pako|node-forge|sm-crypto-v2|uuid)[\\/]/,
+                test: /[\\/]node_modules[\\/](crypto-js|he|fflate|node-forge|sm-crypto-v2|uuid)[\\/]/,
               },
               {
                 name: 'vendor_video-decoder',
@@ -184,18 +184,6 @@ export default defineConfig({
               {
                 name: 'vendor_artplayer',
                 test: /[\\/]node_modules[\\/](artplayer|artplayer-.*)[\\/]/,
-              },
-              {
-                name: 'vendor_dplayer',
-                test: /[\\/]node_modules[\\/]dplayer[\\/]/,
-              },
-              {
-                name: 'vendor_nplayer',
-                test: /[\\/]node_modules[\\/](nplayer|@nplayer\/.*)[\\/]/,
-              },
-              {
-                name: 'vendor_oplayer',
-                test: /[\\/]node_modules[\\/]@oplayer[\\/]/,
               },
             ],
           },
